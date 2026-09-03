@@ -1,4 +1,4 @@
-import { Schema, MapSchema, type } from "@colyseus/schema";
+import { Schema, MapSchema, type, view } from "@colyseus/schema";
 
 export class PlayerState extends Schema {
   @type("string") id = "";
@@ -44,8 +44,13 @@ export class MonsterState extends Schema {
   @type("uint8") level = 1;
 }
 
+/**
+ * Both entity maps are `@view()`-gated: an entry reaches a client only after
+ * `GameRoom` puts it into that client's `StateView`. See `GameRoom.refreshView()` —
+ * without it every client would decode all 92 monsters and every player.
+ */
 export class GameState extends Schema {
-  @type({ map: PlayerState }) players = new MapSchema<PlayerState>();
-  @type({ map: MonsterState }) monsters = new MapSchema<MonsterState>();
+  @view() @type({ map: PlayerState }) players = new MapSchema<PlayerState>();
+  @view() @type({ map: MonsterState }) monsters = new MapSchema<MonsterState>();
   @type("uint32") tick = 0;
 }

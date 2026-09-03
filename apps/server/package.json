@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "smoke": "tsx scripts/smoke.ts",
     "check:world": "tsx scripts/check-world.ts",
+    "check:view": "tsx scripts/check-view.ts",
     "check:initdata": "tsx scripts/check-initdata.ts"
   },
   "dependencies": {

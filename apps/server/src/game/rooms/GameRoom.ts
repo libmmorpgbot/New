@@ -1,4 +1,5 @@
 import { Room, type Client } from "@colyseus/core";
+import { StateView } from "@colyseus/schema";
 import {
   CHAT_MIN_INTERVAL_MS,
   ChatMessage,
@@ -10,6 +11,9 @@ import {
   PLAYER_RADIUS,
   SPAWN_POINT,
   SkillMessage,
+  VIEW_HYSTERESIS,
+  VIEW_RADIUS,
+  VIEW_REFRESH_MS,
   isSolidAt,
   TICK_MS,
   dir8Index,
@@ -33,7 +37,12 @@ import { applyLevelStats, performBasicAttack, useSkill } from "../sim/combat";
 import type { SimContext } from "../sim/context";
 import { spawnAll } from "../sim/spawner";
 import type { MonsterRuntime, PlayerRuntime } from "../sim/types";
-import { GameState, PlayerState } from "./schema";
+import { GameState, MonsterState, PlayerState } from "./schema";
+
+/** An entity enters a view at this distance... */
+const VIEW_ENTER_SQ = VIEW_RADIUS * VIEW_RADIUS;
+/** ...and only leaves once it is past the hysteresis margin. */
+const VIEW_LEAVE_SQ = (VIEW_RADIUS + VIEW_HYSTERESIS) ** 2;
 
 interface JoinOptions {
   token?: string;
@@ -50,6 +59,7 @@ export class GameRoom extends Room<GameState> {
   private players = new Map<string, PlayerRuntime>();
   private inputs = new Map<string, InputMessage[]>();
   private lastTickAt = Date.now();
+  private viewAcc = 0;
 
   override onCreate(): void {
     this.monsters = spawnAll(this.tiles);
@@ -149,6 +159,11 @@ export class GameRoom extends Room<GameState> {
     this.inputs.set(client.sessionId, []);
     this.state.players.set(client.sessionId, state);
 
+    // Seed the view now: the first patch has to carry the player's own entry,
+    // otherwise the client has nothing to render or reconcile against.
+    client.view = new StateView();
+    this.refreshView(client);
+
     if (runtime.userId !== null) void this.restoreProgress(runtime);
   }
 
@@ -199,7 +214,11 @@ export class GameRoom extends Room<GameState> {
 
   override onLeave(client: Client): void {
     const leaving = this.players.get(client.sessionId);
-    if (leaving) void this.savePlayer(leaving);
+    if (leaving) {
+      void this.savePlayer(leaving);
+      // `StateView.remove` needs the entity still attached to the state.
+      this.dropFromViews(leaving.state);
+    }
 
     this.players.delete(client.sessionId);
     this.inputs.delete(client.sessionId);
@@ -216,11 +235,12 @@ export class GameRoom extends Room<GameState> {
       players: this.players,
       monsters: this.monsters,
       emit: {
-        hit: (event: HitEvent) => this.broadcast(EVT.hit, event),
+        hit: (event: HitEvent) => this.sendNear(event.x, event.y, EVT.hit, event),
         levelUp: (sessionId, level) => {
           this.clients.getById(sessionId)?.send(EVT.levelUp, { level });
         },
-        skillUsed: (event: SkillUsedEvent) => this.broadcast(EVT.skillUsed, event),
+        skillUsed: (event: SkillUsedEvent) =>
+          this.sendNear(event.x, event.y, EVT.skillUsed, event),
       },
     };
   }
@@ -238,6 +258,12 @@ export class GameRoom extends Room<GameState> {
 
     updateMonsters(ctx, dtSec);
     this.syncMonsterVisibility();
+
+    this.viewAcc += dtSec * 1000;
+    if (this.viewAcc >= VIEW_REFRESH_MS) {
+      this.viewAcc = 0;
+      for (const client of this.clients) this.refreshView(client);
+    }
 
     this.state.tick = (this.state.tick + 1) >>> 0;
   }
@@ -334,13 +360,99 @@ export class GameRoom extends Room<GameState> {
     player.busyUntil = 0;
   }
 
+  /**
+   * Area of interest: a client decodes only the entities around its own player.
+   * The whole room state is otherwise a fixed cost per client — 92 monsters plus
+   * every other player — which is what stops the room scaling past one map.
+   *
+   * Entities enter at `VIEW_RADIUS` and leave at `VIEW_RADIUS + VIEW_HYSTERESIS`,
+   * so one walking the boundary is not added and removed on alternating passes.
+   */
+  private refreshView(client: Client): void {
+    const view = client.view;
+    const self = this.players.get(client.sessionId);
+    if (!view || !self) return;
+
+    const cx = self.state.x;
+    const cy = self.state.y;
+
+    for (const player of this.players.values()) {
+      // The player's own entry drives the HUD and reconciliation — never drop it.
+      if (player === self) {
+        if (!view.has(self.state)) view.add(self.state);
+        continue;
+      }
+      // Runtime and state maps are written together, so a live player is always
+      // attached — unlike a monster, which drops out of the state when it dies.
+      this.reconcileViewEntry(view, player.state, cx, cy, true);
+    }
+
+    for (const monster of this.monsters.values()) {
+      const attached = this.state.monsters.has(monster.state.id);
+      this.reconcileViewEntry(view, monster.state, cx, cy, attached);
+    }
+  }
+
+  /** Adds or removes one entity, leaving it alone while it stays in the band. */
+  private reconcileViewEntry(
+    view: StateView,
+    state: PlayerState | MonsterState,
+    cx: number,
+    cy: number,
+    attached: boolean,
+  ): void {
+    const seen = view.has(state);
+    if (!attached) {
+      if (seen) view.remove(state);
+      return;
+    }
+
+    const dx = state.x - cx;
+    const dy = state.y - cy;
+    const distSq = dx * dx + dy * dy;
+
+    if (seen) {
+      if (distSq > VIEW_LEAVE_SQ) view.remove(state);
+    } else if (distSq <= VIEW_ENTER_SQ) {
+      view.add(state);
+    }
+  }
+
+  /**
+   * Takes an entity out of every view while it is still attached to the state —
+   * `StateView.remove` reads its parent, so it has to run before the delete.
+   */
+  private dropFromViews(state: PlayerState | MonsterState): void {
+    for (const client of this.clients) {
+      if (client.view?.has(state)) client.view.remove(state);
+    }
+  }
+
+  /**
+   * One-off events are worth no more than the entities they describe: a client
+   * that cannot see the fight does not need its damage numbers. Uses the outer
+   * radius so an entity lingering in the hysteresis band still reports.
+   */
+  private sendNear(x: number, y: number, type: string, payload: unknown): void {
+    for (const client of this.clients) {
+      const player = this.players.get(client.sessionId);
+      if (!player) continue;
+      const dx = player.state.x - x;
+      const dy = player.state.y - y;
+      if (dx * dx + dy * dy <= VIEW_LEAVE_SQ) client.send(type, payload);
+    }
+  }
+
   /** Corpses stay in the state long enough to animate, then drop out until respawn. */
   private syncMonsterVisibility(): void {
     for (const monster of this.monsters.values()) {
       const visible = monster.state.hp > 0 || monster.removeAt !== 0;
       const present = this.state.monsters.has(monster.state.id);
       if (visible && !present) this.state.monsters.set(monster.state.id, monster.state);
-      else if (!visible && present) this.state.monsters.delete(monster.state.id);
+      else if (!visible && present) {
+        this.dropFromViews(monster.state);
+        this.state.monsters.delete(monster.state.id);
+      }
     }
   }
 }

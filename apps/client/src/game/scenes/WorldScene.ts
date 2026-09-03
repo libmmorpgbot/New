@@ -130,8 +130,10 @@ export class WorldScene extends Phaser.Scene {
 
   override update(_time: number, delta: number): void {
     const room = getRoom();
-    // `room.state` fills in only once the first patch has been decoded.
-    if (!room?.state?.players || !room.state.monsters) return;
+    // `room.state` fills in only once the first patch has been decoded. Only
+    // `players` is guaranteed from then on — it always carries our own entry,
+    // while `monsters` is absent until the server's view puts one in range.
+    if (!room?.state?.players) return;
 
     const self = room.state.players.get(this.selfId) as PlayerView | undefined;
     if (self && !this.spawned) {
@@ -304,7 +306,9 @@ export class WorldScene extends Phaser.Scene {
     const seen = new Set<string>();
     const t = 1 - Math.exp(-delta / 90);
 
-    room.state.monsters.forEach((monster, id: string) => {
+    // Anything the server drops from our view leaves the map, so the sweep at
+    // the end doubles as the despawn for entities that simply walked too far.
+    room.state.monsters?.forEach((monster, id: string) => {
       seen.add(id);
       let sprite = this.monsters.get(id);
 

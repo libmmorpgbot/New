@@ -30,6 +30,18 @@ export const CHAT_MIN_INTERVAL_MS = 700;
 
 /** Entities further than this from a player are not worth streaming to them. */
 export const VIEW_RADIUS = 900;
+/**
+ * An entity already in view is dropped only once it is this much further out.
+ * Without the margin anything walking along the boundary would be added and
+ * removed on alternating refreshes.
+ */
+export const VIEW_HYSTERESIS = 150;
+/**
+ * How often per-client views are recomputed. Slower than the tick on purpose:
+ * nothing crosses `VIEW_HYSTERESIS` worth of distance in this window, so the
+ * extra work buys nothing.
+ */
+export const VIEW_REFRESH_MS = 200;
 
 /** Monsters neither aggro into nor walk inside this radius around the spawn plaza. */
 export const SAFE_ZONE_RADIUS = 300;
