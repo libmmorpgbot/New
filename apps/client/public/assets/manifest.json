@@ -1,0 +1,1084 @@
+{
+  "heroes": {
+    "deathknight": {
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "anims": {
+        "die": {
+          "file": "sprites/heroes/deathknight/die.png",
+          "frames": 15
+        },
+        "down-attack": {
+          "file": "sprites/heroes/deathknight/down-attack.png",
+          "frames": 15
+        },
+        "down-idle": {
+          "file": "sprites/heroes/deathknight/down-idle.png",
+          "frames": 15
+        },
+        "down-left-attack": {
+          "file": "sprites/heroes/deathknight/down-left-attack.png",
+          "frames": 15
+        },
+        "down-left-idle": {
+          "file": "sprites/heroes/deathknight/down-left-idle.png",
+          "frames": 15
+        },
+        "down-left-run": {
+          "file": "sprites/heroes/deathknight/down-left-run.png",
+          "frames": 15
+        },
+        "down-right-attack": {
+          "file": "sprites/heroes/deathknight/down-right-attack.png",
+          "frames": 15
+        },
+        "down-right-idle": {
+          "file": "sprites/heroes/deathknight/down-right-idle.png",
+          "frames": 15
+        },
+        "down-right-run": {
+          "file": "sprites/heroes/deathknight/down-right-run.png",
+          "frames": 15
+        },
+        "down-run": {
+          "file": "sprites/heroes/deathknight/down-run.png",
+          "frames": 15
+        },
+        "left-attack": {
+          "file": "sprites/heroes/deathknight/left-attack.png",
+          "frames": 15
+        },
+        "left-idle": {
+          "file": "sprites/heroes/deathknight/left-idle.png",
+          "frames": 15
+        },
+        "left-run": {
+          "file": "sprites/heroes/deathknight/left-run.png",
+          "frames": 15
+        },
+        "right-attack": {
+          "file": "sprites/heroes/deathknight/right-attack.png",
+          "frames": 15
+        },
+        "right-idle": {
+          "file": "sprites/heroes/deathknight/right-idle.png",
+          "frames": 15
+        },
+        "right-run": {
+          "file": "sprites/heroes/deathknight/right-run.png",
+          "frames": 15
+        },
+        "up-attack": {
+          "file": "sprites/heroes/deathknight/up-attack.png",
+          "frames": 15
+        },
+        "up-idle": {
+          "file": "sprites/heroes/deathknight/up-idle.png",
+          "frames": 15
+        },
+        "up-left-attack": {
+          "file": "sprites/heroes/deathknight/up-left-attack.png",
+          "frames": 15
+        },
+        "up-left-idle": {
+          "file": "sprites/heroes/deathknight/up-left-idle.png",
+          "frames": 15
+        },
+        "up-left-run": {
+          "file": "sprites/heroes/deathknight/up-left-run.png",
+          "frames": 15
+        },
+        "up-right-attack": {
+          "file": "sprites/heroes/deathknight/up-right-attack.png",
+          "frames": 15
+        },
+        "up-right-idle": {
+          "file": "sprites/heroes/deathknight/up-right-idle.png",
+          "frames": 15
+        },
+        "up-right-run": {
+          "file": "sprites/heroes/deathknight/up-right-run.png",
+          "frames": 15
+        },
+        "up-run": {
+          "file": "sprites/heroes/deathknight/up-run.png",
+          "frames": 15
+        }
+      }
+    },
+    "mage": {
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "anims": {
+        "die": {
+          "file": "sprites/heroes/mage/die.png",
+          "frames": 15
+        },
+        "down-attack": {
+          "file": "sprites/heroes/mage/down-attack.png",
+          "frames": 15
+        },
+        "down-idle": {
+          "file": "sprites/heroes/mage/down-idle.png",
+          "frames": 15
+        },
+        "down-left-attack": {
+          "file": "sprites/heroes/mage/down-left-attack.png",
+          "frames": 15
+        },
+        "down-left-idle": {
+          "file": "sprites/heroes/mage/down-left-idle.png",
+          "frames": 15
+        },
+        "down-left-run": {
+          "file": "sprites/heroes/mage/down-left-run.png",
+          "frames": 15
+        },
+        "down-right-attack": {
+          "file": "sprites/heroes/mage/down-right-attack.png",
+          "frames": 15
+        },
+        "down-right-idle": {
+          "file": "sprites/heroes/mage/down-right-idle.png",
+          "frames": 15
+        },
+        "down-right-run": {
+          "file": "sprites/heroes/mage/down-right-run.png",
+          "frames": 15
+        },
+        "down-run": {
+          "file": "sprites/heroes/mage/down-run.png",
+          "frames": 15
+        },
+        "left-attack": {
+          "file": "sprites/heroes/mage/left-attack.png",
+          "frames": 15
+        },
+        "left-idle": {
+          "file": "sprites/heroes/mage/left-idle.png",
+          "frames": 15
+        },
+        "left-run": {
+          "file": "sprites/heroes/mage/left-run.png",
+          "frames": 15
+        },
+        "right-attack": {
+          "file": "sprites/heroes/mage/right-attack.png",
+          "frames": 15
+        },
+        "right-idle": {
+          "file": "sprites/heroes/mage/right-idle.png",
+          "frames": 15
+        },
+        "right-run": {
+          "file": "sprites/heroes/mage/right-run.png",
+          "frames": 15
+        },
+        "up-attack": {
+          "file": "sprites/heroes/mage/up-attack.png",
+          "frames": 15
+        },
+        "up-idle": {
+          "file": "sprites/heroes/mage/up-idle.png",
+          "frames": 15
+        },
+        "up-left-attack": {
+          "file": "sprites/heroes/mage/up-left-attack.png",
+          "frames": 15
+        },
+        "up-left-idle": {
+          "file": "sprites/heroes/mage/up-left-idle.png",
+          "frames": 15
+        },
+        "up-left-run": {
+          "file": "sprites/heroes/mage/up-left-run.png",
+          "frames": 15
+        },
+        "up-right-attack": {
+          "file": "sprites/heroes/mage/up-right-attack.png",
+          "frames": 15
+        },
+        "up-right-idle": {
+          "file": "sprites/heroes/mage/up-right-idle.png",
+          "frames": 15
+        },
+        "up-right-run": {
+          "file": "sprites/heroes/mage/up-right-run.png",
+          "frames": 15
+        },
+        "up-run": {
+          "file": "sprites/heroes/mage/up-run.png",
+          "frames": 15
+        }
+      }
+    },
+    "ranger": {
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "anims": {
+        "die": {
+          "file": "sprites/heroes/ranger/die.png",
+          "frames": 15
+        },
+        "down-attack": {
+          "file": "sprites/heroes/ranger/down-attack.png",
+          "frames": 15
+        },
+        "down-idle": {
+          "file": "sprites/heroes/ranger/down-idle.png",
+          "frames": 15
+        },
+        "down-left-attack": {
+          "file": "sprites/heroes/ranger/down-left-attack.png",
+          "frames": 15
+        },
+        "down-left-idle": {
+          "file": "sprites/heroes/ranger/down-left-idle.png",
+          "frames": 15
+        },
+        "down-left-run": {
+          "file": "sprites/heroes/ranger/down-left-run.png",
+          "frames": 15
+        },
+        "down-right-attack": {
+          "file": "sprites/heroes/ranger/down-right-attack.png",
+          "frames": 15
+        },
+        "down-right-idle": {
+          "file": "sprites/heroes/ranger/down-right-idle.png",
+          "frames": 15
+        },
+        "down-right-run": {
+          "file": "sprites/heroes/ranger/down-right-run.png",
+          "frames": 15
+        },
+        "down-run": {
+          "file": "sprites/heroes/ranger/down-run.png",
+          "frames": 15
+        },
+        "left-attack": {
+          "file": "sprites/heroes/ranger/left-attack.png",
+          "frames": 15
+        },
+        "left-idle": {
+          "file": "sprites/heroes/ranger/left-idle.png",
+          "frames": 15
+        },
+        "left-run": {
+          "file": "sprites/heroes/ranger/left-run.png",
+          "frames": 15
+        },
+        "right-attack": {
+          "file": "sprites/heroes/ranger/right-attack.png",
+          "frames": 15
+        },
+        "right-idle": {
+          "file": "sprites/heroes/ranger/right-idle.png",
+          "frames": 15
+        },
+        "right-run": {
+          "file": "sprites/heroes/ranger/right-run.png",
+          "frames": 15
+        },
+        "up-attack": {
+          "file": "sprites/heroes/ranger/up-attack.png",
+          "frames": 15
+        },
+        "up-idle": {
+          "file": "sprites/heroes/ranger/up-idle.png",
+          "frames": 15
+        },
+        "up-left-attack": {
+          "file": "sprites/heroes/ranger/up-left-attack.png",
+          "frames": 15
+        },
+        "up-left-idle": {
+          "file": "sprites/heroes/ranger/up-left-idle.png",
+          "frames": 15
+        },
+        "up-left-run": {
+          "file": "sprites/heroes/ranger/up-left-run.png",
+          "frames": 15
+        },
+        "up-right-attack": {
+          "file": "sprites/heroes/ranger/up-right-attack.png",
+          "frames": 15
+        },
+        "up-right-idle": {
+          "file": "sprites/heroes/ranger/up-right-idle.png",
+          "frames": 15
+        },
+        "up-right-run": {
+          "file": "sprites/heroes/ranger/up-right-run.png",
+          "frames": 15
+        },
+        "up-run": {
+          "file": "sprites/heroes/ranger/up-run.png",
+          "frames": 15
+        }
+      }
+    }
+  },
+  "monsters": {
+    "beholder1": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/beholder1/attack.png",
+          "frames": 12
+        },
+        "death": {
+          "file": "sprites/monsters/beholder1/death.png",
+          "frames": 9
+        },
+        "idle": {
+          "file": "sprites/monsters/beholder1/idle.png",
+          "frames": 12
+        },
+        "run": {
+          "file": "sprites/monsters/beholder1/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "beholder2": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/beholder2/attack.png",
+          "frames": 12
+        },
+        "death": {
+          "file": "sprites/monsters/beholder2/death.png",
+          "frames": 9
+        },
+        "idle": {
+          "file": "sprites/monsters/beholder2/idle.png",
+          "frames": 12
+        },
+        "run": {
+          "file": "sprites/monsters/beholder2/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "beholder3": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/beholder3/attack.png",
+          "frames": 12
+        },
+        "death": {
+          "file": "sprites/monsters/beholder3/death.png",
+          "frames": 9
+        },
+        "idle": {
+          "file": "sprites/monsters/beholder3/idle.png",
+          "frames": 12
+        },
+        "run": {
+          "file": "sprites/monsters/beholder3/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "demon1": {
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/demon1/attack.png",
+          "frames": 10
+        },
+        "death": {
+          "file": "sprites/monsters/demon1/death.png",
+          "frames": 13
+        },
+        "idle": {
+          "file": "sprites/monsters/demon1/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/demon1/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "demon2": {
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/demon2/attack.png",
+          "frames": 10
+        },
+        "death": {
+          "file": "sprites/monsters/demon2/death.png",
+          "frames": 13
+        },
+        "idle": {
+          "file": "sprites/monsters/demon2/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/demon2/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "demon3": {
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/demon3/attack.png",
+          "frames": 10
+        },
+        "death": {
+          "file": "sprites/monsters/demon3/death.png",
+          "frames": 13
+        },
+        "idle": {
+          "file": "sprites/monsters/demon3/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/demon3/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "ent1": {
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/ent1/attack.png",
+          "frames": 7
+        },
+        "death": {
+          "file": "sprites/monsters/ent1/death.png",
+          "frames": 6
+        },
+        "idle": {
+          "file": "sprites/monsters/ent1/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/ent1/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "ent2": {
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/ent2/attack.png",
+          "frames": 7
+        },
+        "death": {
+          "file": "sprites/monsters/ent2/death.png",
+          "frames": 12
+        },
+        "idle": {
+          "file": "sprites/monsters/ent2/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/ent2/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "imp1": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/imp1/attack.png",
+          "frames": 6
+        },
+        "death": {
+          "file": "sprites/monsters/imp1/death.png",
+          "frames": 10
+        },
+        "idle": {
+          "file": "sprites/monsters/imp1/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/imp1/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "imp2": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/imp2/attack.png",
+          "frames": 6
+        },
+        "death": {
+          "file": "sprites/monsters/imp2/death.png",
+          "frames": 10
+        },
+        "idle": {
+          "file": "sprites/monsters/imp2/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/imp2/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "imp3": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/imp3/attack.png",
+          "frames": 6
+        },
+        "death": {
+          "file": "sprites/monsters/imp3/death.png",
+          "frames": 10
+        },
+        "idle": {
+          "file": "sprites/monsters/imp3/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/imp3/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "lizardman1": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/lizardman1/attack.png",
+          "frames": 7
+        },
+        "death": {
+          "file": "sprites/monsters/lizardman1/death.png",
+          "frames": 7
+        },
+        "idle": {
+          "file": "sprites/monsters/lizardman1/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/lizardman1/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "lizardman2": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/lizardman2/attack.png",
+          "frames": 7
+        },
+        "death": {
+          "file": "sprites/monsters/lizardman2/death.png",
+          "frames": 7
+        },
+        "idle": {
+          "file": "sprites/monsters/lizardman2/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/lizardman2/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "orc1": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/orc1/attack.png",
+          "frames": 8
+        },
+        "death": {
+          "file": "sprites/monsters/orc1/death.png",
+          "frames": 8
+        },
+        "idle": {
+          "file": "sprites/monsters/orc1/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/orc1/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "orc2": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/orc2/attack.png",
+          "frames": 8
+        },
+        "death": {
+          "file": "sprites/monsters/orc2/death.png",
+          "frames": 8
+        },
+        "idle": {
+          "file": "sprites/monsters/orc2/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/orc2/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "orc3": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/orc3/attack.png",
+          "frames": 8
+        },
+        "death": {
+          "file": "sprites/monsters/orc3/death.png",
+          "frames": 8
+        },
+        "idle": {
+          "file": "sprites/monsters/orc3/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/orc3/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "plant1": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/plant1/attack.png",
+          "frames": 7
+        },
+        "death": {
+          "file": "sprites/monsters/plant1/death.png",
+          "frames": 10
+        },
+        "idle": {
+          "file": "sprites/monsters/plant1/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/plant1/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "plant2": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/plant2/attack.png",
+          "frames": 7
+        },
+        "death": {
+          "file": "sprites/monsters/plant2/death.png",
+          "frames": 10
+        },
+        "idle": {
+          "file": "sprites/monsters/plant2/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/plant2/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "rat1": {
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/rat1/attack.png",
+          "frames": 8
+        },
+        "death": {
+          "file": "sprites/monsters/rat1/death.png",
+          "frames": 5
+        },
+        "idle": {
+          "file": "sprites/monsters/rat1/idle.png",
+          "frames": 6
+        },
+        "run": {
+          "file": "sprites/monsters/rat1/run.png",
+          "frames": 6
+        }
+      }
+    },
+    "rat2": {
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/rat2/attack.png",
+          "frames": 8
+        },
+        "death": {
+          "file": "sprites/monsters/rat2/death.png",
+          "frames": 5
+        },
+        "idle": {
+          "file": "sprites/monsters/rat2/idle.png",
+          "frames": 6
+        },
+        "run": {
+          "file": "sprites/monsters/rat2/run.png",
+          "frames": 6
+        }
+      }
+    },
+    "slime1": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/slime1/attack.png",
+          "frames": 10
+        },
+        "death": {
+          "file": "sprites/monsters/slime1/death.png",
+          "frames": 8
+        },
+        "idle": {
+          "file": "sprites/monsters/slime1/idle.png",
+          "frames": 6
+        },
+        "run": {
+          "file": "sprites/monsters/slime1/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "slime2": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/slime2/attack.png",
+          "frames": 10
+        },
+        "death": {
+          "file": "sprites/monsters/slime2/death.png",
+          "frames": 10
+        },
+        "idle": {
+          "file": "sprites/monsters/slime2/idle.png",
+          "frames": 6
+        },
+        "run": {
+          "file": "sprites/monsters/slime2/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "vampires1": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/vampires1/attack.png",
+          "frames": 12
+        },
+        "death": {
+          "file": "sprites/monsters/vampires1/death.png",
+          "frames": 11
+        },
+        "idle": {
+          "file": "sprites/monsters/vampires1/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/vampires1/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "vampires2": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/vampires2/attack.png",
+          "frames": 12
+        },
+        "death": {
+          "file": "sprites/monsters/vampires2/death.png",
+          "frames": 11
+        },
+        "idle": {
+          "file": "sprites/monsters/vampires2/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/vampires2/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "zombie1": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/zombie1/attack.png",
+          "frames": 10
+        },
+        "death": {
+          "file": "sprites/monsters/zombie1/death.png",
+          "frames": 9
+        },
+        "idle": {
+          "file": "sprites/monsters/zombie1/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/zombie1/run.png",
+          "frames": 8
+        }
+      }
+    },
+    "zombie2": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "rows": 4,
+      "anims": {
+        "attack": {
+          "file": "sprites/monsters/zombie2/attack.png",
+          "frames": 10
+        },
+        "death": {
+          "file": "sprites/monsters/zombie2/death.png",
+          "frames": 9
+        },
+        "idle": {
+          "file": "sprites/monsters/zombie2/idle.png",
+          "frames": 4
+        },
+        "run": {
+          "file": "sprites/monsters/zombie2/run.png",
+          "frames": 8
+        }
+      }
+    }
+  },
+  "skills": [
+    {
+      "id": "adim_v2",
+      "file": "sprites/skills/adim_v2.png"
+    },
+    {
+      "id": "adv_babochki",
+      "file": "sprites/skills/adv_babochki.png"
+    },
+    {
+      "id": "adv_bezumie",
+      "file": "sprites/skills/adv_bezumie.png"
+    },
+    {
+      "id": "adv_buffcrit",
+      "file": "sprites/skills/adv_buffcrit.png"
+    },
+    {
+      "id": "adv_buffskratak",
+      "file": "sprites/skills/adv_buffskratak.png"
+    },
+    {
+      "id": "adv_grad",
+      "file": "sprites/skills/adv_grad.png"
+    },
+    {
+      "id": "adv_iscelenie",
+      "file": "sprites/skills/adv_iscelenie.png"
+    },
+    {
+      "id": "adv_istoshenie",
+      "file": "sprites/skills/adv_istoshenie.png"
+    },
+    {
+      "id": "adv_jadnost",
+      "file": "sprites/skills/adv_jadnost.png"
+    },
+    {
+      "id": "adv_jajda",
+      "file": "sprites/skills/adv_jajda.png"
+    },
+    {
+      "id": "adv_koluchieokovi",
+      "file": "sprites/skills/adv_koluchieokovi.png"
+    },
+    {
+      "id": "adv_molotgneva",
+      "file": "sprites/skills/adv_molotgneva.png"
+    },
+    {
+      "id": "adv_ostrie",
+      "file": "sprites/skills/adv_ostrie.png"
+    },
+    {
+      "id": "adv_oxota",
+      "file": "sprites/skills/adv_oxota.png"
+    },
+    {
+      "id": "adv_perenesenie",
+      "file": "sprites/skills/adv_perenesenie.png"
+    },
+    {
+      "id": "adv_razryad",
+      "file": "sprites/skills/adv_razryad.png"
+    },
+    {
+      "id": "adv_rivok",
+      "file": "sprites/skills/adv_rivok.png"
+    },
+    {
+      "id": "adv_shit",
+      "file": "sprites/skills/adv_shit.png"
+    },
+    {
+      "id": "adv_uronmolnii",
+      "file": "sprites/skills/adv_uronmolnii.png"
+    },
+    {
+      "id": "adv_vixr",
+      "file": "sprites/skills/adv_vixr.png"
+    },
+    {
+      "id": "adv_vspishka",
+      "file": "sprites/skills/adv_vspishka.png"
+    },
+    {
+      "id": "ainvidible_v2",
+      "file": "sprites/skills/ainvidible_v2.png"
+    },
+    {
+      "id": "asmertudar",
+      "file": "sprites/skills/asmertudar.png"
+    },
+    {
+      "id": "audarteni",
+      "file": "sprites/skills/audarteni.png"
+    },
+    {
+      "id": "latkspeed",
+      "file": "sprites/skills/latkspeed.png"
+    },
+    {
+      "id": "lkombo",
+      "file": "sprites/skills/lkombo.png"
+    },
+    {
+      "id": "lmulti",
+      "file": "sprites/skills/lmulti.png"
+    },
+    {
+      "id": "lprijok",
+      "file": "sprites/skills/lprijok.png"
+    },
+    {
+      "id": "mbarier",
+      "file": "sprites/skills/mbarier.png"
+    },
+    {
+      "id": "mnova",
+      "file": "sprites/skills/mnova.png"
+    },
+    {
+      "id": "mshar_v2",
+      "file": "sprites/skills/mshar_v2.png"
+    },
+    {
+      "id": "mteleport",
+      "file": "sprites/skills/mteleport.png"
+    },
+    {
+      "id": "sheal",
+      "file": "sprites/skills/sheal.png"
+    },
+    {
+      "id": "socepinenie",
+      "file": "sprites/skills/socepinenie.png"
+    },
+    {
+      "id": "spartyheal",
+      "file": "sprites/skills/spartyheal.png"
+    },
+    {
+      "id": "sshit",
+      "file": "sprites/skills/sshit.png"
+    },
+    {
+      "id": "wboevoy_v2",
+      "file": "sprites/skills/wboevoy_v2.png"
+    },
+    {
+      "id": "wrivok_v2",
+      "file": "sprites/skills/wrivok_v2.png"
+    },
+    {
+      "id": "wstun_v2",
+      "file": "sprites/skills/wstun_v2.png"
+    },
+    {
+      "id": "wvixr_v2",
+      "file": "sprites/skills/wvixr_v2.png"
+    }
+  ]
+}
