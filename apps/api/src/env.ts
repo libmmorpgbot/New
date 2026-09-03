@@ -2,6 +2,8 @@ import "dotenv/config";
 import { z } from "zod";
 
 const Env = z.object({
+  /** Injected by most PaaS hosts (Railway, Render, Fly). Wins over API_PORT. */
+  PORT: z.coerce.number().int().optional(),
   API_PORT: z.coerce.number().int().default(3001),
   BOT_TOKEN: z.string().default(""),
   JWT_SECRET: z.string().min(8).default("dev-only-secret-change-me"),
@@ -12,4 +14,6 @@ const Env = z.object({
   NODE_ENV: z.string().default("development"),
 });
 
-export const env = Env.parse(process.env);
+const parsed = Env.parse(process.env);
+
+export const env = { ...parsed, API_PORT: parsed.PORT ?? parsed.API_PORT };

@@ -1,7 +1,5 @@
 import { isInsideTelegram, telegramDisplayName, tg } from "./telegram";
-
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
-const DEV_LOGIN = import.meta.env.VITE_DEV_LOGIN === "1";
+import { config } from "./config";
 
 export interface Session {
   token: string;
@@ -16,7 +14,7 @@ export async function login(): Promise<Session> {
   const initData = tg()?.initData;
 
   if (!initData) {
-    if (!DEV_LOGIN) {
+    if (!config().devLogin) {
       throw new Error("Открой игру через Telegram — вне Telegram вход недоступен.");
     }
     // Local browser testing: the game server accepts `dev:<name>` when DEV_LOGIN=1.
@@ -25,7 +23,7 @@ export async function login(): Promise<Session> {
     return { token: `dev:${name}`, name };
   }
 
-  const res = await fetch(`${API_URL}/auth/telegram`, {
+  const res = await fetch(`${config().apiUrl}/auth/telegram`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ initData }),

@@ -4,6 +4,7 @@ import { useGame } from "../store";
 import { login } from "../auth";
 import { connect } from "../net/net";
 import { loadManifest } from "../game/assets";
+import { loadConfig } from "../config";
 import { startPhaser } from "../game/PhaserGame";
 import ClassSelect from "./ClassSelect";
 import Hud from "./Hud";
@@ -22,6 +23,8 @@ export default function App() {
     store.setPhase("connecting");
 
     try {
+      // Endpoints must be resolved before login or the socket connects.
+      await loadConfig();
       const [session] = await Promise.all([login(), loadManifest()]);
       await connect(session.token, cls);
       startPhaser();

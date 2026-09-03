@@ -16,7 +16,11 @@
     "typecheck": "pnpm -r typecheck",
     "assets": "node tools/build-assets.mjs",
     "db:generate": "pnpm --filter @tg-mmo/db generate",
-    "db:push": "pnpm --filter @tg-mmo/db push"
+    "db:push": "pnpm --filter @tg-mmo/db push",
+    "start:client": "pnpm --filter @tg-mmo/client start",
+    "start:game": "pnpm --filter @tg-mmo/game-server start",
+    "start:api": "pnpm --filter @tg-mmo/api start",
+    "start:bot": "pnpm --filter @tg-mmo/bot start"
   },
   "devDependencies": {
     "typescript": "5.9.3"

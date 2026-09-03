@@ -127,6 +127,22 @@ BOTS=50 RUN_MS=30000 pnpm --filter @tg-mmo/game-server smoke   # нагрузо�
 за реальную секунду — `INPUT_DT_BUDGET_PER_SEC`, что закрывает спидхак.
 Кулдауны, мана, урон и опыт считаются только на сервере.
 
+## Деплой
+
+Готовая инструкция под Railway (четыре сервиса + Postgres) — в
+[`docs/deploy-railway.md`](docs/deploy-railway.md). Кратко:
+
+```bash
+pnpm start:game     # Colyseus,   слушает $PORT
+pnpm start:api      # Fastify,    слушает $PORT
+pnpm start:client   # статика dist/, слушает $PORT
+pnpm start:bot      # long polling, порт не слушает
+```
+
+Адреса API и игрового сервера клиент получает в рантайме из `/config.json`
+(его отдаёт `apps/client/serve.mjs` на основе переменных окружения), а не из
+собранного бандла — поэтому смена домена это перезапуск, а не пересборка.
+
 ## Что дальше
 
 1. **AOI (area of interest)** — сейчас состояние комнаты рассылается целиком.

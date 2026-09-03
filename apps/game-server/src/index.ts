@@ -23,5 +23,5 @@ const gameServer = new Server({
 
 gameServer.define("world", GameRoom);
 
-await gameServer.listen(env.GAME_PORT);
+await gameServer.listen(env.GAME_PORT, "0.0.0.0");
 console.log(`[game-server] listening on :${env.GAME_PORT}`);

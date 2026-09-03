@@ -2,6 +2,8 @@ import "dotenv/config";
 import { z } from "zod";
 
 const Env = z.object({
+  /** Injected by most PaaS hosts (Railway, Render, Fly). Wins over GAME_PORT. */
+  PORT: z.coerce.number().int().optional(),
   GAME_PORT: z.coerce.number().int().default(2567),
   JWT_SECRET: z.string().min(8).default("dev-only-secret-change-me"),
   /** When 1, unsigned dev tokens are accepted. Never enable in production. */
@@ -13,5 +15,7 @@ const Env = z.object({
   NODE_ENV: z.string().default("development"),
 });
 
-export const env = Env.parse(process.env);
+const parsed = Env.parse(process.env);
+
+export const env = { ...parsed, GAME_PORT: parsed.PORT ?? parsed.GAME_PORT };
 export const isDevLogin = env.DEV_LOGIN === "1";
