@@ -25,8 +25,8 @@ import {
   type HitEvent,
   type SkillUsedEvent,
 } from "@tg-mmo/shared";
-import { verifyToken, type TokenPayload } from "../auth";
-import { env } from "../env";
+import { verifyToken, type TokenPayload } from "../../auth/jwt";
+import { env } from "../../env";
 import { loadProgress, persistenceEnabled, storeProgress, userIdFromSubject } from "../persistence";
 import { updateMonsters } from "../sim/ai";
 import { applyLevelStats, performBasicAttack, useSkill } from "../sim/combat";

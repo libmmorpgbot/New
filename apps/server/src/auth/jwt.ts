@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { env, isDevLogin } from "./env";
+import { env, isDevLogin } from "../env";
 
 export const TokenPayload = z.object({
   sub: z.string(),
@@ -9,9 +9,16 @@ export const TokenPayload = z.object({
 });
 export type TokenPayload = z.infer<typeof TokenPayload>;
 
+/** Mints the token the client presents when it opens the game socket. */
+export function signToken(payload: TokenPayload): string {
+  return jwt.sign(payload, env.JWT_SECRET, {
+    expiresIn: env.JWT_TTL as jwt.SignOptions["expiresIn"],
+  });
+}
+
 /**
- * Verifies the JWT minted by the API after it validated Telegram's initData.
- * The game server never sees initData itself — it only trusts our own signature.
+ * Verifies the token minted by `signToken` after initData was validated. The
+ * game side never sees initData itself — it only trusts our own signature.
  */
 export function verifyToken(token: string | undefined): TokenPayload {
   if (!token) throw new Error("missing token");

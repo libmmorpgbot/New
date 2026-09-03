@@ -1,119 +1,68 @@
 # Деплой на Railway
 
-Четыре сервиса в проекте — это правильно: в `apps/` четыре независимых процесса,
-и Railway создаёт по сервису на каждый. Redis из `docker-compose.yml` пока не нужен,
-в коде он не используется (понадобится при масштабировании на несколько игровых нод).
+Игра — **один сервис**. Процесс из `apps/server` держит на одном порту всё:
+статику клиента, API, игровой WebSocket и бота (long polling).
 
-| Сервис | Что это | Публичный домен |
-| --- | --- | --- |
-| `@tg-mmo/client` | статика Mini App | **да** — этот адрес открывает Telegram |
-| `@tg-mmo/game-server` | Colyseus, WebSocket | **да** — к нему подключается клиент |
-| `@tg-mmo/api` | Fastify, проверка `initData` | **да** — к нему ходит клиент за токеном |
-| `@tg-mmo/bot` | grammY, long polling | **нет** — исходящие запросы, порт не слушает |
+Так проще и дешевле, но главное — исчезает целый класс ошибок: клиент и API на
+одном домене, поэтому нет ни CORS, ни адресов, которые надо прописывать, ни
+второго `JWT_SECRET`, который может разойтись с первым.
 
-Плюс плагин **Postgres** из Railway (`+ New` → `Database` → `PostgreSQL`).
+Нужно ровно две вещи:
 
-## 1. Общие настройки каждого сервиса
+- сервис из этого репозитория;
+- плагин **PostgreSQL** (`+ New` → `Database` → `PostgreSQL`).
 
-Для всех четырёх в **Settings**:
+Redis из `docker-compose.yml` пока не нужен — в коде он не используется
+(понадобится, когда игровых нод станет несколько).
 
-- **Root Directory** — оставить пустым (корень репозитория). Это pnpm-воркспейс,
-  установка из подпапки не соберётся.
-- **Build Command** — `pnpm install --frozen-lockfile` (клиенту — см. ниже).
-- **Start Command** — своя для каждого сервиса.
+## 1. Создать сервис
 
-Чтобы коммит не пересобирал все четыре сервиса, задай **Watch Paths**:
+`New Project` → `Deploy from GitHub repo` → этот репозиторий, ветка
+`claude/2d-mmorpg-telegram-stack-d4hq3h`.
 
-```
-client       apps/client/**  packages/shared/**  package.json  pnpm-lock.yaml
-game-server  apps/game-server/**  packages/**  package.json  pnpm-lock.yaml
-api          apps/api/**  packages/**  package.json  pnpm-lock.yaml
-bot          apps/bot/**  packages/shared/**  package.json  pnpm-lock.yaml
-```
+Если Railway создал несколько сервисов сам (по одному на каждое приложение) —
+лишние удали, оставь один.
 
-## 2. Порядок настройки
+В **Settings**:
 
-Домены нужны раньше, чем переменные, поэтому идём так:
+| Поле | Значение |
+| --- | --- |
+| Root Directory | **пусто** (корень репозитория) |
+| Build Command | `pnpm install --frozen-lockfile && pnpm build` |
+| Start Command | `pnpm start` |
+| Healthcheck Path | `/api/health` |
 
-**Шаг 1 — game-server и api.** Настрой их первыми и нажми
-`Settings → Networking → Generate Domain`. Получишь два адреса вида
-`game-server-production-xxxx.up.railway.app`.
+Root Directory обязательно пустой: это pnpm-воркспейс, установка из подпапки
+не соберётся.
 
-### game-server
-
-```
-Build Command  pnpm install --frozen-lockfile
-Start Command  pnpm start:game
-Healthcheck    /health
-```
-
-Переменные:
+## 2. Переменные окружения
 
 | Переменная | Значение |
 | --- | --- |
-| `JWT_SECRET` | длинная случайная строка — **та же, что у api** |
+| `JWT_SECRET` | длинная случайная строка |
+| `BOT_TOKEN` | токен от [@BotFather](https://t.me/botfather) |
 | `DEV_LOGIN` | `0` |
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
+| `WEBAPP_URL` | адрес самого сервиса, см. шаг 3 |
 
-`PORT` Railway подставляет сам, задавать не нужно.
+`PORT` Railway подставляет сам. Адреса API и сокета клиенту задавать не нужно —
+он на том же домене и находит их сам.
 
-### api
+## 3. Домен и бот
 
-```
-Build Command  pnpm install --frozen-lockfile
-Start Command  pnpm start:api
-Healthcheck    /health
-```
+`Settings` → `Networking` → `Generate Domain`. Получишь адрес вида
+`ashen-production-xxxx.up.railway.app`.
 
-| Переменная | Значение |
-| --- | --- |
-| `BOT_TOKEN` | токен от @BotFather |
-| `JWT_SECRET` | **тот же, что у game-server** |
-| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
-
-Если секреты разойдутся, api выдаст токен, который game-server отвергнет с
-`jwt signature invalid` — игрок не сможет войти.
-
-**Шаг 2 — client.** Сгенерируй ему домен и подставь адреса из шага 1.
-
-### client
+Впиши его в `WEBAPP_URL` **со схемой и слешем**:
 
 ```
-Build Command  pnpm install --frozen-lockfile && pnpm --filter @tg-mmo/client build
-Start Command  pnpm start:client
-Healthcheck    /
+WEBAPP_URL=https://ashen-production-xxxx.up.railway.app/
 ```
 
-| Переменная | Значение |
-| --- | --- |
-| `API_URL` | `https://<домен api>` |
-| `GAME_WS_URL` | `wss://<домен game-server>` — **wss, не ws** |
-| `DEV_LOGIN` | `0` |
+После рестарта в логах появится `[bot] polling started`. Если вместо этого
+`бот выключен: нужны BOT_TOKEN и WEBAPP_URL` — одна из двух переменных пустая.
 
-Клиент читает эти значения в рантайме через `/config.json`, а не из бандла,
-поэтому сменить адрес API или игрового сервера — это **перезапуск сервиса,
-а не пересборка**. Railway отдаёт HTTPS, а браузер не разрешает `ws://` со
-страницы на `https://` — отсюда `wss://`.
-
-**Шаг 3 — bot.**
-
-### bot
-
-```
-Build Command  pnpm install --frozen-lockfile
-Start Command  pnpm start:bot
-Healthcheck    отключить
-```
-
-| Переменная | Значение |
-| --- | --- |
-| `BOT_TOKEN` | тот же токен |
-| `WEBAPP_URL` | `https://<домен client>/` |
-
-Бот работает на long polling и не слушает порт, поэтому healthcheck его убьёт.
-Домен ему тоже не нужен.
-
-## 3. Миграции
+## 4. Миграции
 
 Один раз, локально, против публичного адреса базы (Railway показывает его в
 плагине Postgres как `DATABASE_PUBLIC_URL`):
@@ -122,21 +71,48 @@ Healthcheck    отключить
 DATABASE_URL="postgres://...@...proxy.rlwy.net:PORT/railway" pnpm db:push
 ```
 
-Без этого игра запустится, но прогресс сохраняться не будет — сервер
-пишет ошибку в лог и продолжает работать в памяти.
+Без этого игра запустится, но прогресс сохраняться не будет — сервер напишет
+ошибку в лог и продолжит работать в памяти.
 
-## 4. Подключить к Telegram
+## 5. Подключить к Telegram
 
-В @BotFather: `/mybots` → бот → `Bot Settings` → `Menu Button` → адрес клиента.
+В @BotFather: `/mybots` → бот → `Bot Settings` → `Menu Button` → адрес сервиса.
 Затем `/start` в боте — кнопка «Играть» откроет Mini App.
+
+## Что сервер пишет при старте
+
+```
+[server] listening on :8080
+[server] client=on telegram-auth=on dev-login=off db=on
+[bot] polling started
+```
+
+Эта строка — быстрая диагностика: `client=off` значит клиент не собран,
+`telegram-auth=off` — нет `BOT_TOKEN`, `db=off` — нет `DATABASE_URL`.
+`dev-login=ON` в продакшене означает, что в игру пускают без Telegram — так быть не должно.
 
 ## Если что-то не работает
 
 | Симптом | Причина |
 | --- | --- |
-| Белый экран, в консоли `WebSocket failed` | `GAME_WS_URL` с `ws://` вместо `wss://`, либо у game-server нет домена |
-| «Не удалось авторизоваться (401)» | разные `JWT_SECRET` у api и game-server, или неверный `BOT_TOKEN` |
-| «Открой игру через Telegram» вне Telegram | так и задумано при `DEV_LOGIN=0` |
-| bot-сервис бесконечно перезапускается | включён healthcheck — отключи |
-| Прогресс не сохраняется | не выполнен `pnpm db:push`, либо не проставлен `DATABASE_URL` |
 | Сборка падает на `pnpm install` | задан Root Directory — убери, нужен корень репозитория |
+| `client=off` в логе | не выполнен `pnpm build` в Build Command |
+| «Не удалось авторизоваться (401)» | неверный `BOT_TOKEN` |
+| «Открой игру через Telegram» | так и задумано при `DEV_LOGIN=0` |
+| Бот молчит, в логе «бот выключен» | пустой `BOT_TOKEN` или `WEBAPP_URL` |
+| Прогресс не сохраняется | не выполнен `pnpm db:push`, либо не проставлен `DATABASE_URL` |
+| Healthcheck не проходит | путь должен быть `/api/health`, не `/health` |
+
+## Когда сервис придётся разделить
+
+Один процесс держит порядка сотни игроков в одной комнате. Дальше узкое место —
+игровой тик, а не HTTP, и разделять надо так:
+
+1. Вынести раздачу статики на CDN — при сборке проставить клиенту
+   `VITE_SERVER_URL=https://<адрес игрового сервиса>`, и он будет ходить туда.
+2. Поднять несколько экземпляров игрового процесса с `SERVE_CLIENT=0` и
+   `RUN_BOT=0`, добавить Redis-presence Colyseus и раскидать зоны по нодам.
+3. Бота оставить в одном экземпляре — Telegram не любит несколько
+   параллельных long polling на один токен.
+
+Переменные `SERVE_CLIENT` и `RUN_BOT` для этого уже есть.

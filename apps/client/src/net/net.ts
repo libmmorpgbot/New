@@ -1,7 +1,7 @@
 import { Client, type Room } from "colyseus.js";
 import { EVT, MSG, type ChatEvent, type ClassId, type HitEvent, type SkillUsedEvent } from "@tg-mmo/shared";
 import { useGame } from "../store";
-import { config } from "../config";
+import { gameWsUrl } from "../config";
 
 /** Mirrors the server schema; colyseus.js hands us plain objects with these fields. */
 export interface PlayerView {
@@ -62,7 +62,7 @@ export function setHandlers(next: NetHandlers): void {
 }
 
 export async function connect(token: string, cls: ClassId): Promise<WorldRoom> {
-  const client = new Client(config().gameWsUrl);
+  const client = new Client(gameWsUrl);
   room = await client.joinOrCreate<WorldRoomState>("world", { token, cls });
 
   room.onMessage(EVT.hit, (event: HitEvent) => handlers.onHit?.(event));

@@ -3,7 +3,7 @@
  * obvious forgeries. Run with `pnpm --filter @tg-mmo/api check:initdata`.
  */
 import { createHmac } from "node:crypto";
-import { verifyInitData } from "../src/telegram";
+import { verifyInitData } from "../src/auth/telegram";
 
 const BOT_TOKEN = "123456:TEST-TOKEN-FOR-LOCAL-CHECKS";
 const TTL = 3600;

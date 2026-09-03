@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "start": "node serve.mjs",
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit"
   },
@@ -16,8 +15,7 @@
     "phaser": "^3.90.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "zustand": "^5.0.15",
-    "sirv": "^3.0.2"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

@@ -24,11 +24,17 @@
 | --- | --- |
 | Клиент | TypeScript, **Phaser 3.90** (рендер, тайлмапы, анимации), **React 19** + **Tailwind 4** (HUD), **Vite 8** |
 | Реалтайм | **Colyseus 0.16** — комнаты, бинарная дельта-синхронизация состояния |
-| API | **Fastify 5**, JWT, проверка Telegram `initData` |
+| HTTP | **Express 5**, JWT, проверка Telegram `initData`, раздача собранного клиента |
 | Данные | **PostgreSQL 17** + **Drizzle ORM** |
-| Бот | **grammY** |
+| Бот | **grammY**, long polling в том же процессе |
 | Общий код | `packages/shared` — константы, математика, карта, классы, монстры, формулы урона, схемы сообщений (Zod) |
-| Инфра | pnpm workspaces, Docker Compose (Postgres + Redis) |
+| Инфра | pnpm workspaces, Docker Compose (Postgres) |
+
+Всё серверное — **один процесс на одном порту**: статика, API, игровой
+WebSocket и бот. Клиент и API оказываются на одном домене, поэтому нет ни CORS,
+ни адресов, которые надо прописывать, ни второго секрета, который может
+разойтись с первым. Разделить обратно на сервисы можно переменными
+`SERVE_CLIENT` и `RUN_BOT` — см. [`docs/deploy-railway.md`](docs/deploy-railway.md).
 
 ### Почему такие версии
 
@@ -45,25 +51,43 @@ Phaser взят из ветки 3.x, а не 4.x — ради стабильно
 
 ```bash
 pnpm install
-cp .env.example .env          # для локальной игры хватит значений по умолчанию
-docker compose up -d          # Postgres + Redis (не обязательно для первого запуска)
-pnpm db:push                  # применить схему, если поднимал Postgres
+cp apps/server/.env.example apps/server/.env
+cp apps/client/.env.example apps/client/.env
 
-pnpm dev:game                 # игровой сервер  :2567
-pnpm dev:client               # клиент          :5173
+pnpm dev:server               # игра + API + бот  :2567
+pnpm dev:client               # Vite с hot reload :5173
 ```
 
 Открой `http://localhost:5173`. Вне Telegram работает dev-вход: клиент
 отправляет токен `dev:<имя>`, а сервер принимает его, пока `DEV_LOGIN=1`.
 **В продакшене `DEV_LOGIN` должен быть `0`.**
 
+Разрешён ли dev-вход, решает сервер: клиент спрашивает об этом
+`/api/health` и не предлагает то, что сервер всё равно отклонит.
+
+Хочешь один процесс и локально (как в продакшене) — собери клиент и открой
+`http://localhost:2567`:
+
+```bash
+pnpm build && pnpm start
+```
+
+База не обязательна: без `DATABASE_URL` сервер работает в памяти. Нужен
+прогресс — подними Postgres и примени схему:
+
+```bash
+docker compose up -d
+pnpm db:push
+```
+
 ### Запуск внутри Telegram
 
 1. Создай бота у [@BotFather](https://t.me/botfather), положи токен в `BOT_TOKEN`.
-2. Подними HTTPS-туннель к клиенту: `cloudflared tunnel --url http://localhost:5173`
+2. Собери клиент: `pnpm build` — сервер раздаёт его сам.
+3. Подними HTTPS-туннель: `cloudflared tunnel --url http://localhost:2567`
    (или ngrok). Telegram не открывает Mini App по http.
-3. Пропиши полученный адрес в `WEBAPP_URL`, запусти `pnpm dev:api` и `pnpm dev:bot`.
-4. В боте нажми `/start` → «Играть».
+4. Пропиши полученный адрес в `WEBAPP_URL` и запусти `pnpm start`.
+5. В боте нажми `/start` → «Играть».
 
 ## Управление
 
@@ -77,13 +101,17 @@ pnpm dev:client               # клиент          :5173
 
 ```
 apps/
-  client/        Phaser + React, Mini App
-  game-server/   Colyseus: комнаты, тик, боёвка, ИИ монстров
-  api/           Fastify: проверка initData, JWT, профиль
-  bot/           grammY: онбординг и кнопка запуска
+  client/            Phaser + React, Mini App
+  server/            единственный серверный процесс
+    src/index.ts       сборка всего на одном http-сервере
+    src/api/           Express: /api/health, /api/auth/telegram, /api/me
+    src/auth/          проверка initData и наш JWT
+    src/game/          Colyseus: комнаты, тик, боёвка, ИИ монстров
+    src/bot/           grammY
+    src/static.ts      раздача собранного клиента
 packages/
-  shared/        код, общий для клиента и сервера
-  db/            схема Drizzle и миграции
+  shared/            код, общий для клиента и сервера
+  db/                схема Drizzle и миграции
 tools/
   build-assets.mjs   генератор манифеста спрайтов
 ```
@@ -112,12 +140,13 @@ tools/
 ## Проверки
 
 ```bash
-pnpm typecheck                                   # все пакеты
-pnpm --filter @tg-mmo/api check:initdata         # валидация подписи Telegram
-pnpm --filter @tg-mmo/game-server check:world    # раскладка зон и безопасной площади
-pnpm --filter @tg-mmo/game-server smoke          # боты подключаются и бегают
-BOTS=50 RUN_MS=30000 pnpm --filter @tg-mmo/game-server smoke   # нагрузочный прогон
+pnpm typecheck                              # все пакеты
+pnpm check                                  # подпись Telegram + раскладка мира
+pnpm --filter @tg-mmo/server smoke          # боты подключаются и бегают
+BOTS=50 RUN_MS=30000 pnpm --filter @tg-mmo/server smoke   # нагрузочный прогон
 ```
+
+Для `smoke` сервер должен быть запущен с `DEV_LOGIN=1`.
 
 ## Защита от читов
 
@@ -129,26 +158,25 @@ BOTS=50 RUN_MS=30000 pnpm --filter @tg-mmo/game-server smoke   # нагрузо�
 
 ## Деплой
 
-Готовая инструкция под Railway (четыре сервиса + Postgres) — в
-[`docs/deploy-railway.md`](docs/deploy-railway.md). Кратко:
+Один сервис плюс Postgres. Подробно — [`docs/deploy-railway.md`](docs/deploy-railway.md).
 
-```bash
-pnpm start:game     # Colyseus,   слушает $PORT
-pnpm start:api      # Fastify,    слушает $PORT
-pnpm start:client   # статика dist/, слушает $PORT
-pnpm start:bot      # long polling, порт не слушает
+```
+Build Command      pnpm install --frozen-lockfile && pnpm build
+Start Command      pnpm start
+Healthcheck Path   /api/health
 ```
 
-Адреса API и игрового сервера клиент получает в рантайме из `/config.json`
-(его отдаёт `apps/client/serve.mjs` на основе переменных окружения), а не из
-собранного бандла — поэтому смена домена это перезапуск, а не пересборка.
+Переменные: `JWT_SECRET`, `BOT_TOKEN`, `WEBAPP_URL`, `DEV_LOGIN=0`,
+`DATABASE_URL`. `PORT` подставляет хостинг. Адреса клиенту задавать не нужно —
+он на том же домене.
 
 ## Что дальше
 
 1. **AOI (area of interest)** — сейчас состояние комнаты рассылается целиком.
    На карте 2048×2048 со 100 игроками это ещё нормально, но перед ростом нужно
    фильтровать по `VIEW_RADIUS` (в Colyseus — `StateView` / `@filter`).
-2. **Зоны как отдельные комнаты** и Redis-presence для нескольких игровых нод.
+2. **Зоны как отдельные комнаты** и Redis-presence для нескольких игровых нод
+   (тогда же понадобится разделить процесс — `SERVE_CLIENT=0`, `RUN_BOT=0`).
 3. **Инвентарь и лут** — таблицы есть, дропа с монстров пока нет.
 4. **Telegram Stars** — покупки внутри игры через Bot API (обязательны для цифровых товаров).
 5. **Тайлсет и объекты карты** вместо процедурной земли.

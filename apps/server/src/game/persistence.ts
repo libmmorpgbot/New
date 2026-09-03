@@ -4,7 +4,7 @@ import {
   saveCharacter,
   type CharacterProgress,
 } from "@tg-mmo/db";
-import { env } from "./env";
+import { env } from "../env";
 
 const db = createDb(env.DATABASE_URL);
 

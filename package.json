@@ -8,19 +8,15 @@
   },
   "scripts": {
     "dev": "pnpm --parallel --filter \"./apps/*\" dev",
-    "dev:game": "pnpm --filter @tg-mmo/game-server dev",
+    "dev:server": "pnpm --filter @tg-mmo/server dev",
     "dev:client": "pnpm --filter @tg-mmo/client dev",
-    "dev:api": "pnpm --filter @tg-mmo/api dev",
-    "dev:bot": "pnpm --filter @tg-mmo/bot dev",
-    "build": "pnpm -r build",
+    "build": "pnpm --filter @tg-mmo/client build",
+    "start": "pnpm --filter @tg-mmo/server start",
     "typecheck": "pnpm -r typecheck",
     "assets": "node tools/build-assets.mjs",
     "db:generate": "pnpm --filter @tg-mmo/db generate",
     "db:push": "pnpm --filter @tg-mmo/db push",
-    "start:client": "pnpm --filter @tg-mmo/client start",
-    "start:game": "pnpm --filter @tg-mmo/game-server start",
-    "start:api": "pnpm --filter @tg-mmo/api start",
-    "start:bot": "pnpm --filter @tg-mmo/bot start"
+    "check": "pnpm --filter @tg-mmo/server check:initdata && pnpm --filter @tg-mmo/server check:world"
   },
   "devDependencies": {
     "typescript": "5.9.3"

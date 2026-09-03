@@ -4,7 +4,7 @@ import { useGame } from "../store";
 import { login } from "../auth";
 import { connect } from "../net/net";
 import { loadManifest } from "../game/assets";
-import { loadConfig } from "../config";
+import { loadServerInfo } from "../config";
 import { startPhaser } from "../game/PhaserGame";
 import ClassSelect from "./ClassSelect";
 import Hud from "./Hud";
@@ -23,8 +23,8 @@ export default function App() {
     store.setPhase("connecting");
 
     try {
-      // Endpoints must be resolved before login or the socket connects.
-      await loadConfig();
+      // The server decides whether a dev login is allowed, so ask before logging in.
+      await loadServerInfo();
       const [session] = await Promise.all([login(), loadManifest()]);
       await connect(session.token, cls);
       startPhaser();

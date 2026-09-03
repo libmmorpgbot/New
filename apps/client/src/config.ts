@@ -1,44 +1,36 @@
 /**
- * Where the client should talk to.
+ * Where the client talks to, and what that server allows.
  *
- * Vite bakes `import.meta.env.*` into the bundle at build time, which on a PaaS
- * means changing a service domain would force a rebuild. So the built app also
- * asks its own static server for `/config.json` (generated from env at startup)
- * and lets that win. Locally there is no such file, the fetch fails, and the
- * `.env` values are used as-is.
+ * In the default deployment one process serves this bundle, the API and the game
+ * socket, so everything is same-origin and there is nothing to configure.
+ * `VITE_SERVER_URL` exists only for local development, where Vite runs on its
+ * own port, and for anyone who splits the server back out into services.
  */
-export interface RuntimeConfig {
-  apiUrl: string;
-  gameWsUrl: string;
+const serverUrl = (import.meta.env.VITE_SERVER_URL || location.origin).replace(/\/$/, "");
+
+export const apiUrl = serverUrl;
+export const gameWsUrl = serverUrl.replace(/^http/, "ws");
+
+export interface ServerInfo {
+  /** True when the server accepts unsigned `dev:<name>` tokens. */
   devLogin: boolean;
+  /** True when BOT_TOKEN is configured and Telegram logins can be verified. */
+  telegram: boolean;
 }
 
-const fallback: RuntimeConfig = {
-  apiUrl: import.meta.env.VITE_API_URL ?? "http://localhost:3001",
-  gameWsUrl: import.meta.env.VITE_GAME_WS_URL ?? "ws://localhost:2567",
-  devLogin: import.meta.env.VITE_DEV_LOGIN === "1",
-};
+let info: ServerInfo = { devLogin: false, telegram: false };
 
-let current: RuntimeConfig = fallback;
+export const serverInfo = (): ServerInfo => info;
 
-export function config(): RuntimeConfig {
-  return current;
-}
+/**
+ * Asks the server what it supports. Whether a dev login is possible is the
+ * server's decision — a build-time flag on the client could disagree with it.
+ */
+export async function loadServerInfo(): Promise<ServerInfo> {
+  const res = await fetch(`${apiUrl}/api/health`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Сервер ответил ${res.status}`);
 
-export async function loadConfig(): Promise<RuntimeConfig> {
-  try {
-    const res = await fetch("config.json", { cache: "no-store" });
-    if (!res.ok) return current;
-
-    const raw = (await res.json()) as Partial<Record<keyof RuntimeConfig, unknown>>;
-    current = {
-      apiUrl: typeof raw.apiUrl === "string" && raw.apiUrl ? raw.apiUrl : fallback.apiUrl,
-      gameWsUrl:
-        typeof raw.gameWsUrl === "string" && raw.gameWsUrl ? raw.gameWsUrl : fallback.gameWsUrl,
-      devLogin: raw.devLogin === true,
-    };
-  } catch {
-    // No config.json (local dev, or the file is not served) — keep build-time values.
-  }
-  return current;
+  const raw = (await res.json()) as Partial<ServerInfo>;
+  info = { devLogin: raw.devLogin === true, telegram: raw.telegram === true };
+  return info;
 }
