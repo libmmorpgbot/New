@@ -29,10 +29,24 @@ import { haptic } from "../../telegram";
 const INPUT_STEP_MS = 1000 / INPUT_SEND_HZ;
 const HUD_INTERVAL_MS = 100;
 const SKILL_CAST_LOCK_MS = 260;
-/** How close a tap has to land, in *screen* pixels, to grab a monster. */
-const PICK_RADIUS_PX = 42;
-/** Taps land on the body, which sits above the entity's feet position. */
-const PICK_BODY_OFFSET = 14;
+/**
+ * Smoothing for everything the client does not predict. Has to cover the 66 ms
+ * server tick without adding so much lag that other characters look like they
+ * are floating behind themselves.
+ */
+const REMOTE_SMOOTH_MS = 70;
+/** Extra forgiveness around a monster's body, in screen pixels. */
+const PICK_SLACK_PX = 16;
+/** How far the attack button will look for something to fight, in world pixels. */
+const ACQUIRE_RADIUS = 320;
+/** Stop this fraction short of maximum reach, so a step back does not break the swing. */
+const APPROACH_MARGIN = 0.75;
+/** Judge the approach stuck if it gains less than this many pixels in the window below. */
+const STUCK_PROGRESS_PX = 6;
+const STUCK_WINDOW_MS = 400;
+/** How long to steer around an obstacle before aiming at the target again. */
+const DETOUR_MS = 550;
+const DETOUR_ANGLE = Math.PI / 3;
 /** Margin around the camera view so sprites appear before they slide in. */
 const CULL_MARGIN = 120;
 /** How many damage labels to keep alive for reuse. */
@@ -80,6 +94,14 @@ export class WorldScene extends Phaser.Scene {
   private targetId: string | null = null;
   private readonly floaters: Phaser.GameObjects.Text[] = [];
   private uiScale = 1;
+  private keys: Record<string, Phaser.Input.Keyboard.Key> | null = null;
+  /** Assist mode: hold the target, close the distance, keep swinging. */
+  private autoAttack = false;
+  /** Straight-line approach state — the map has rock walls and no pathfinding. */
+  private approachBestDistance = Infinity;
+  private approachCheckedAt = 0;
+  private detourUntil = 0;
+  private detourSign = 1;
 
   constructor() {
     super("world");
@@ -119,28 +141,105 @@ export class WorldScene extends Phaser.Scene {
       const room = getRoom();
       if (!room?.state?.monsters) return;
 
-      // Tolerance is fixed on screen: pulling the camera back must not make
-      // monsters harder to hit.
-      let best: string | null = null;
-      let bestDist = PICK_RADIUS_PX / this.cameras.main.zoom;
-
-      room.state.monsters.forEach((monster: MonsterView, id: string) => {
-        if (monster.hp <= 0) return;
-        const d = Math.hypot(monster.x - world.x, monster.y - PICK_BODY_OFFSET - world.y);
-        if (d < bestDist) {
-          bestDist = d;
-          best = id;
-        }
-      });
-
-      this.setTarget(best);
+      const picked = this.monsterAt(world.x, world.y);
+      if (!picked) this.autoAttack = false;
+      this.setTarget(picked);
     });
+  }
+
+  /**
+   * Hit test against the monster's drawn body rather than a fixed radius, with a
+   * constant slack in screen pixels so pulling the camera back never makes
+   * something harder to tap.
+   */
+  private monsterAt(worldX: number, worldY: number): string | null {
+    const room = getRoom();
+    if (!room?.state?.monsters) return null;
+
+    const slack = PICK_SLACK_PX / this.cameras.main.zoom;
+    let best: string | null = null;
+    let bestDist = Infinity;
+
+    room.state.monsters.forEach((monster: MonsterView, id: string) => {
+      if (monster.hp <= 0) return;
+      const sprite = this.monsters.get(id);
+      if (!sprite || !sprite.visible) return;
+
+      const d = Math.hypot(monster.x - worldX, monster.y + sprite.bodyOffsetY - worldY);
+      if (d <= sprite.bodyRadius + slack && d < bestDist) {
+        bestDist = d;
+        best = id;
+      }
+    });
+
+    return best;
+  }
+
+  /** Nearest living monster worth swinging at. */
+  private acquireTarget(): string | null {
+    const room = getRoom();
+    if (!room?.state?.monsters) return null;
+
+    let best: string | null = null;
+    let bestDist = ACQUIRE_RADIUS;
+
+    room.state.monsters.forEach((monster: MonsterView, id: string) => {
+      if (monster.hp <= 0) return;
+      const d = Math.hypot(monster.x - this.simX, monster.y - this.simY);
+      if (d < bestDist) {
+        bestDist = d;
+        best = id;
+      }
+    });
+
+    return best;
+  }
+
+  /**
+   * Walks at the target, and steers around whatever it walks into.
+   *
+   * There is no pathfinding on this map, so a straight line parks the character
+   * against the first rock cluster between it and the monster. When the approach
+   * stops making progress, veer off at an angle for a moment; alternating the
+   * side means a dead end gets tried from both directions.
+   */
+  private approachDirection(
+    nx: number,
+    ny: number,
+    distance: number,
+    now: number,
+  ): { x: number; y: number } {
+    if (now >= this.approachCheckedAt) {
+      const gained = this.approachBestDistance - distance;
+      if (gained < STUCK_PROGRESS_PX && this.approachBestDistance !== Infinity) {
+        this.detourSign = -this.detourSign;
+        this.detourUntil = now + DETOUR_MS;
+      }
+      this.approachBestDistance = distance;
+      this.approachCheckedAt = now + STUCK_WINDOW_MS;
+    }
+
+    if (now >= this.detourUntil) return { x: nx, y: ny };
+
+    const angle = DETOUR_ANGLE * this.detourSign;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return { x: nx * cos - ny * sin, y: nx * sin + ny * cos };
+  }
+
+  private targetMonster(): MonsterView | null {
+    if (!this.targetId) return null;
+    const monster = getRoom()?.state?.monsters?.get(this.targetId) as MonsterView | undefined;
+    return monster && monster.hp > 0 ? monster : null;
   }
 
   private setTarget(id: string | null): void {
     if (this.targetId === id) return;
     if (this.targetId) this.monsters.get(this.targetId)?.setSelected(false);
     this.targetId = id;
+    this.approachBestDistance = Infinity;
+    this.approachCheckedAt = 0;
+    this.detourUntil = 0;
     if (id) {
       this.monsters.get(id)?.setSelected(true);
       haptic("light");
@@ -188,6 +287,14 @@ export class WorldScene extends Phaser.Scene {
     const keyboard = this.input.keyboard;
     if (!keyboard) return;
 
+    // Built once. `addKeys` allocates and registers new Key objects on every
+    // call, so doing it per input step leaked objects and grew the cost of
+    // every keyboard event for as long as the session lasted.
+    this.keys = keyboard.addKeys("W,A,S,D,UP,LEFT,DOWN,RIGHT") as Record<
+      string,
+      Phaser.Input.Keyboard.Key
+    >;
+
     keyboard.on("keydown-SPACE", () => {
       inputState.attackQueued = true;
     });
@@ -199,12 +306,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private keyboardVector(): { x: number; y: number } {
-    const keyboard = this.input.keyboard;
-    if (!keyboard) return { x: 0, y: 0 };
-    const keys = keyboard.addKeys("W,A,S,D,UP,LEFT,DOWN,RIGHT") as Record<
-      string,
-      Phaser.Input.Keyboard.Key
-    >;
+    const keys = this.keys;
+    if (!keys) return { x: 0, y: 0 };
     let x = 0;
     let y = 0;
     if (keys.A?.isDown || keys.LEFT?.isDown) x -= 1;
@@ -237,12 +340,10 @@ export class WorldScene extends Phaser.Scene {
 
     if (self) this.reconcile(self);
 
-    // Exponential smoothing keeps the drawn position stable across variable frame
-    // times. The constant has to stay well under the input step, or the smoothing
-    // lags the simulation and the character visibly surges.
-    const t = 1 - Math.exp(-delta / 38);
-    this.renderX = Phaser.Math.Linear(this.renderX, this.simX, t);
-    this.renderY = Phaser.Math.Linear(this.renderY, this.simY, t);
+    // Drawn exactly where the simulation is. Any smoothing here is lag by
+    // another name: it keeps the character gliding after the stick is released.
+    this.renderX = this.simX;
+    this.renderY = this.simY;
 
     this.syncPlayers(room, delta);
     this.syncMonsters(room, delta);
@@ -258,38 +359,82 @@ export class WorldScene extends Phaser.Scene {
   private stepInput(dt: number, self: PlayerView | undefined): void {
     const now = this.time.now;
     const dead = self?.dead ?? false;
+    const stats = statsForLevel(this.selfClass, self?.level ?? 1);
 
-    if (!dead) {
-      if (inputState.attackQueued && now >= this.attackReadyAt && now >= this.busyUntil) {
-        const stats = statsForLevel(this.selfClass, self?.level ?? 1);
-        this.attackReadyAt = now + stats.attackCooldownMs;
-        this.busyUntil = now + stats.attackWindupMs;
-        sendAttack(this.targetId ?? undefined);
-        haptic("light");
-      }
-      if (inputState.skillQueued >= 0) {
-        const slot = inputState.skillQueued;
-        const skillId = CLASSES[this.selfClass].skills[slot];
-        const skill = skillId ? getSkill(skillId) : undefined;
-        const affordable = (self?.mp ?? 0) >= (skill?.manaCost ?? 0);
-        if (skill && now >= (this.skillReadyAt[slot] ?? 0) && now >= this.busyUntil && affordable) {
-          this.skillReadyAt[slot] = now + skill.cooldownMs;
-          this.busyUntil = now + SKILL_CAST_LOCK_MS;
-          sendSkill(slot);
-          haptic("medium");
-        }
-      }
-    }
+    // Consume the one-shot button flags up front so an early return cannot strand them.
+    const pressedAttack = inputState.attackQueued;
+    const queuedSkill = inputState.skillQueued;
     inputState.attackQueued = false;
     inputState.skillQueued = -1;
 
-    const keys = this.keyboardVector();
-    const raw = normalize(inputState.moveX + keys.x, inputState.moveY + keys.y, 0.12);
+    if (dead) this.autoAttack = false;
 
-    const input: PendingInput = { seq: this.seq++, dx: raw.x, dy: raw.y, dt };
+    // Pressing attack picks a fight: grab the nearest monster if none is chosen.
+    if (pressedAttack && !dead) {
+      if (!this.targetMonster()) this.setTarget(this.acquireTarget());
+      this.autoAttack = this.targetId !== null;
+    }
+
+    const keys = this.keyboardVector();
+    const manual = normalize(inputState.moveX + keys.x, inputState.moveY + keys.y, 0.12);
+    const steering = manual.x !== 0 || manual.y !== 0;
+    // Touching the stick always takes control back from the assist.
+    if (steering) this.autoAttack = false;
+
+    let dir = manual;
+    let inReach = false;
+
+    if (!dead) {
+      // A dead target should roll onto the next one rather than dropping the assist.
+      if (this.autoAttack && !this.targetMonster()) this.setTarget(this.acquireTarget());
+
+      const target = this.targetMonster();
+      if (target) {
+        const dx = target.x - this.simX;
+        const dy = target.y - this.simY;
+        const distance = Math.hypot(dx, dy) || 1;
+        const reach = (stats.attackRange + (MONSTERS[target.kind]?.radius ?? 12)) * APPROACH_MARGIN;
+        inReach = distance <= reach;
+
+        if (this.autoAttack) {
+          if (distance > ACQUIRE_RADIUS * 1.6) {
+            // It ran too far to be worth chasing.
+            this.autoAttack = false;
+          } else if (!inReach && !steering) {
+            dir = this.approachDirection(dx / distance, dy / distance, distance, now);
+          }
+        }
+      } else {
+        this.autoAttack = false;
+      }
+    }
+
+    // Swing on the press, then keep swinging while the assist holds the target.
+    if (!dead && (pressedAttack || (this.autoAttack && inReach))) {
+      if (now >= this.attackReadyAt && now >= this.busyUntil) {
+        this.attackReadyAt = now + stats.attackCooldownMs;
+        this.busyUntil = now + stats.attackWindupMs;
+        sendAttack(this.targetId ?? undefined);
+        if (pressedAttack) haptic("light");
+      }
+    }
+
+    if (!dead && queuedSkill >= 0) {
+      const skillId = CLASSES[this.selfClass].skills[queuedSkill];
+      const skill = skillId ? getSkill(skillId) : undefined;
+      const affordable = (self?.mp ?? 0) >= (skill?.manaCost ?? 0);
+      if (skill && now >= (this.skillReadyAt[queuedSkill] ?? 0) && now >= this.busyUntil && affordable) {
+        this.skillReadyAt[queuedSkill] = now + skill.cooldownMs;
+        this.busyUntil = now + SKILL_CAST_LOCK_MS;
+        sendSkill(queuedSkill);
+        haptic("medium");
+      }
+    }
+
+    const input: PendingInput = { seq: this.seq++, dx: dir.x, dy: dir.y, dt };
     sendInput(input.seq, input.dx, input.dy, input.dt);
     this.pending.push(input);
-    if (this.pending.length > 60) this.pending.shift();
+    if (this.pending.length > 120) this.pending.shift();
 
     if (!dead) this.applyMove(input, now);
   }
@@ -345,7 +490,7 @@ export class WorldScene extends Phaser.Scene {
 
   private syncPlayers(room: NonNullable<ReturnType<typeof getRoom>>, delta: number): void {
     const seen = new Set<string>();
-    const t = 1 - Math.exp(-delta / 90);
+    const t = 1 - Math.exp(-delta / REMOTE_SMOOTH_MS);
     const view = this.cameras.main.worldView;
 
     room.state.players.forEach((player: PlayerView, id: string) => {
@@ -361,9 +506,11 @@ export class WorldScene extends Phaser.Scene {
         sprite.setUiScale(this.uiScale);
         this.heroes.set(id, sprite);
         sprite.setPosition(player.x, player.y);
-        // `false`: rounding the camera scroll to whole pixels is what makes slow
-        // movement look like it is stepping rather than gliding.
-        if (id === this.selfId) this.cameras.main.startFollow(sprite, false, 0.16, 0.16);
+        // Locked to the player, not lerped towards them: a trailing camera keeps
+        // the whole world sliding for a few hundred milliseconds after you stop,
+        // which reads as the character overshooting. Rounding stays off so slow
+        // movement glides instead of stepping.
+        if (id === this.selfId) this.cameras.main.startFollow(sprite, false, 1, 1);
       }
 
       if (id === this.selfId) {
@@ -399,7 +546,7 @@ export class WorldScene extends Phaser.Scene {
 
   private syncMonsters(room: NonNullable<ReturnType<typeof getRoom>>, delta: number): void {
     const seen = new Set<string>();
-    const t = 1 - Math.exp(-delta / 90);
+    const t = 1 - Math.exp(-delta / REMOTE_SMOOTH_MS);
     const view = this.cameras.main.worldView;
 
     room.state.monsters.forEach((monster, id: string) => {

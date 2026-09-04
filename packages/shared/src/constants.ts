@@ -3,12 +3,15 @@ export const TICK_RATE = 15;
 export const TICK_MS = 1000 / TICK_RATE;
 
 /**
- * How often the client flushes input to the server, and therefore the size of
- * one movement step. At 20 Hz the 50 ms steps were coarse enough to see: the
- * render smoothing could not keep up with a step that large, so walking pulsed.
- * 30 Hz keeps the simulated cost per second (30 x 33 ms) inside the budget below.
+ * How often the client simulates and flushes one movement step.
+ *
+ * This is deliberately the display rate: a step is then one frame, so pressing
+ * or releasing the stick takes effect on the very next frame and the drawn
+ * position needs no smoothing to hide the stepping. Slower rates (20 and 30 Hz
+ * were both tried) put a visible delay between the thumb and the character.
+ * 60 x 16.7 ms is 1000 ms of simulated time per second, inside the budget below.
  */
-export const INPUT_SEND_HZ = 30;
+export const INPUT_SEND_HZ = 60;
 
 export const TILE_SIZE = 32;
 export const MAP_TILES_X = 64;

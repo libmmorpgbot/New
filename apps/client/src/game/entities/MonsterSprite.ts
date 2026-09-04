@@ -12,6 +12,9 @@ export class MonsterSprite extends Phaser.GameObjects.Container {
   private readonly kind: string;
   private currentAnim = "";
   private headOffset: number;
+  /** Centre of the drawn body relative to the feet, and a radius around it. */
+  readonly bodyOffsetY: number;
+  readonly bodyRadius: number;
 
   /** Redrawing Graphics every frame for a screenful of monsters is the whole frame budget. */
   private lastHp = -1;
@@ -28,6 +31,10 @@ export class MonsterSprite extends Phaser.GameObjects.Container {
     const idleKey = monsterTextureKey(kind, "idle");
     const anchor = measureAnchor(scene, idleKey, frameW, frameH);
     this.headOffset = anchor.headOffset;
+    // Derived from the art, not guessed: a demon fills far more of its frame
+    // than a rat, and a fixed radius would make one easy and the other unhittable.
+    this.bodyOffsetY = anchor.headOffset / 2;
+    this.bodyRadius = Math.max(16, -anchor.headOffset * 0.55);
 
     this.selection = scene.add.graphics();
     this.sprite = scene.add.sprite(0, 0, idleKey, 0);
