@@ -30,7 +30,13 @@ export async function login(): Promise<Session> {
   });
 
   if (!res.ok) {
-    throw new Error(`Не удалось авторизоваться (${res.status})`);
+    // The server explains itself (missing BOT_TOKEN, bad signature) — pass it through
+    // rather than reducing every failure to a bare status code.
+    const reason = await res
+      .json()
+      .then((body: { error?: string }) => body.error)
+      .catch(() => undefined);
+    throw new Error(reason ?? `Не удалось авторизоваться (${res.status})`);
   }
 
   const data = (await res.json()) as { token: string; name?: string };

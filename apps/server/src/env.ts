@@ -30,7 +30,19 @@ const Env = z.object({
   NODE_ENV: z.string().default("development"),
 });
 
-export const env = Env.parse(process.env);
+const parsed = Env.safeParse(process.env);
+
+if (!parsed.success) {
+  // A raw ZodError dump in the deploy log tells nobody which variable is wrong.
+  console.error("Проблема с переменными окружения:\n");
+  for (const issue of parsed.error.issues) {
+    console.error(`  ${issue.path.join(".") || "(корень)"}: ${issue.message}`);
+  }
+  console.error("\nСверься с apps/server/.env.example");
+  process.exit(1);
+}
+
+export const env = parsed.data;
 
 export const isDevLogin = env.DEV_LOGIN === "1";
 export const canVerifyTelegram = env.BOT_TOKEN.length > 0;
