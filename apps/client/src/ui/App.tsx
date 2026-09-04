@@ -14,6 +14,7 @@ import SkillRing from "./SkillRing";
 import Joystick from "./Joystick";
 import Chat from "./Chat";
 import BottomTabs from "./BottomTabs";
+import TargetFrame from "./TargetFrame";
 import DeathOverlay from "./DeathOverlay";
 import PanelHost from "./panels/PanelHost";
 
@@ -80,6 +81,7 @@ export default function App() {
       <div className="absolute right-2 top-[calc(var(--safe-top)+0.5rem)]">
         <Minimap />
       </div>
+      <TargetFrame />
       <SideMenu />
       <Joystick />
       <SkillRing skills={CLASSES[cls].skills} />

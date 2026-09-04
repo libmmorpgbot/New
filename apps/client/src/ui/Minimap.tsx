@@ -42,9 +42,9 @@ export default function Minimap() {
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
 
-    let frame = 0;
+    // The minimap is glanceable, not a viewport — redrawing it every frame just
+    // steals time from the game loop.
     const draw = () => {
-      frame = requestAnimationFrame(draw);
       const room = getRoom();
       const self = room?.state?.players?.get(room.sessionId) as PlayerView | undefined;
       if (!self) return;
@@ -84,8 +84,9 @@ export default function Minimap() {
       ctx.shadowBlur = 0;
     };
 
-    frame = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(frame);
+    draw();
+    const timer = setInterval(draw, 200);
+    return () => clearInterval(timer);
   }, []);
 
   return (

@@ -1,6 +1,7 @@
 import { Room, type Client } from "@colyseus/core";
 import {
   CHAT_MIN_INTERVAL_MS,
+  AttackMessage,
   ChatMessage,
   EVT,
   INPUT_DT_BUDGET_PER_SEC,
@@ -68,9 +69,11 @@ export class GameRoom extends Room<GameState> {
       if (queue.length < 40) queue.push(parsed.data);
     });
 
-    this.onMessage(MSG.attack, (client) => {
+    this.onMessage(MSG.attack, (client, raw) => {
       const player = this.players.get(client.sessionId);
-      if (player) performBasicAttack(this.ctx(), player);
+      if (!player) return;
+      const parsed = AttackMessage.safeParse(raw ?? {});
+      performBasicAttack(this.ctx(), player, parsed.success ? parsed.data.targetId : undefined);
     });
 
     this.onMessage(MSG.skill, (client, raw) => {

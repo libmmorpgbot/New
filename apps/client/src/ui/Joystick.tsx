@@ -54,7 +54,7 @@ export default function Joystick() {
       onPointerCancel={release}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div className="btn-round pulse absolute inset-0">
+      <div className="btn-round absolute inset-0">
         {/* Direction marks at the cardinals, the way a console D-pad reads. */}
         {[
           { rot: 0, top: 6, left: "50%" },

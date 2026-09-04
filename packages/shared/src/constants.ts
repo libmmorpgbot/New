@@ -2,8 +2,13 @@
 export const TICK_RATE = 15;
 export const TICK_MS = 1000 / TICK_RATE;
 
-/** How often the client flushes accumulated input to the server. */
-export const INPUT_SEND_HZ = 20;
+/**
+ * How often the client flushes input to the server, and therefore the size of
+ * one movement step. At 20 Hz the 50 ms steps were coarse enough to see: the
+ * render smoothing could not keep up with a step that large, so walking pulsed.
+ * 30 Hz keeps the simulated cost per second (30 x 33 ms) inside the budget below.
+ */
+export const INPUT_SEND_HZ = 30;
 
 export const TILE_SIZE = 32;
 export const MAP_TILES_X = 64;

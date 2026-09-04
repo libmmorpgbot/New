@@ -9,9 +9,15 @@ export class HeroSprite extends Phaser.GameObjects.Container {
   private readonly ring: Phaser.GameObjects.Graphics;
   private readonly nameplate: Phaser.GameObjects.Text;
   private readonly bar: Phaser.GameObjects.Graphics;
+  /** Plate and bar are scaled against the camera so they stay readable zoomed out. */
+  private readonly overlay: Phaser.GameObjects.Container;
   private readonly cls: string;
   private currentAnim = "";
   private headOffset: number;
+  /** Skip the Graphics rebuild unless something actually changed. */
+  private lastHp = -1;
+  private lastMaxHp = -1;
+  private lastShield = -1;
 
   constructor(scene: Phaser.Scene, cls: string, name: string, isSelf: boolean) {
     super(scene, 0, 0);
@@ -41,7 +47,9 @@ export class HeroSprite extends Phaser.GameObjects.Container {
       })
       .setOrigin(0.5, 0);
 
-    this.add([this.ring, this.sprite, this.bar, this.nameplate]);
+    this.overlay = scene.add.container(0, 0);
+    this.overlay.add([this.bar, this.nameplate]);
+    this.add([this.ring, this.sprite, this.overlay]);
     scene.add.existing(this);
   }
 
@@ -68,6 +76,11 @@ export class HeroSprite extends Phaser.GameObjects.Container {
   }
 
   setVitals(hp: number, maxHp: number, shield: number): void {
+    if (hp === this.lastHp && maxHp === this.lastMaxHp && shield === this.lastShield) return;
+    this.lastHp = hp;
+    this.lastMaxHp = maxHp;
+    this.lastShield = shield;
+
     this.bar.clear();
     if (maxHp <= 0) return;
 
@@ -87,6 +100,10 @@ export class HeroSprite extends Phaser.GameObjects.Container {
       this.bar.fillStyle(0x6fa8ff, 0.95);
       this.bar.fillRect(-width / 2, y - 3, width * Phaser.Math.Clamp(shield / maxHp, 0, 1), 2);
     }
+  }
+
+  setUiScale(scale: number): void {
+    this.overlay.setScale(scale);
   }
 
   flash(): void {

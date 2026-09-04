@@ -18,6 +18,16 @@ export interface HudState {
   respawnIn: number;
 }
 
+export interface TargetInfo {
+  id: string;
+  /** Sprite folder, so the frame can show a portrait. */
+  kind: string;
+  name: string;
+  level: number;
+  hp: number;
+  maxHp: number;
+}
+
 /** Which full-screen panel is open over the game, if any. */
 export type PanelId = "character" | "map" | "quests" | "clans" | "profile" | "menu";
 
@@ -32,6 +42,7 @@ interface GameStore {
   unreadChat: number;
   chatOpen: boolean;
   panel: PanelId | null;
+  target: TargetInfo | null;
   ping: number;
   setPhase: (phase: Phase) => void;
   setError: (error: string) => void;
@@ -41,6 +52,7 @@ interface GameStore {
   pushChat: (event: ChatEvent) => void;
   setChatOpen: (open: boolean) => void;
   setPanel: (panel: PanelId | null) => void;
+  setTarget: (target: TargetInfo | null) => void;
   setPing: (ping: number) => void;
 }
 
@@ -69,6 +81,7 @@ export const useGame = create<GameStore>((set) => ({
   unreadChat: 0,
   chatOpen: false,
   panel: null,
+  target: null,
   ping: 0,
   setPhase: (phase) => set({ phase }),
   setError: (error) => set({ error, phase: "error" }),
@@ -82,5 +95,10 @@ export const useGame = create<GameStore>((set) => ({
     })),
   setChatOpen: (chatOpen) => set(chatOpen ? { chatOpen, unreadChat: 0 } : { chatOpen }),
   setPanel: (panel) => set({ panel }),
+  setTarget: (target) =>
+    set((s) =>
+      // Avoid a re-render when nothing about the target actually moved.
+      s.target?.id === target?.id && s.target?.hp === target?.hp ? s : { target },
+    ),
   setPing: (ping) => set({ ping }),
 }));

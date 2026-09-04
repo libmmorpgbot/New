@@ -1,16 +1,18 @@
 import Phaser from "phaser";
 import {
+  MAP_HEIGHT,
   MAP_TILES_X,
   MAP_TILES_Y,
-  TILE_GRASS,
+  MAP_WIDTH,
   TILE_DIRT,
+  TILE_GRASS,
   TILE_ROCK,
   TILE_SIZE,
   TILE_WATER,
   mulberry32,
 } from "@tg-mmo/shared";
 
-const TILESET_KEY = "terrain-tiles";
+const TERRAIN_KEY = "terrain-map";
 
 const PALETTE: Record<number, { base: number; speckle: number }> = {
   [TILE_GRASS]: { base: 0x2f5d3a, speckle: 0x3a7047 },
@@ -22,53 +24,52 @@ const PALETTE: Record<number, { base: number; speckle: number }> = {
 /**
  * The art pack ships characters only, so the ground is generated: one 32px tile
  * per terrain type, speckled so large fields do not read as flat colour.
+ *
+ * The whole map is baked into a single texture once, rather than kept as a live
+ * tilemap layer. A tilemap re-submits one quad per visible tile every frame —
+ * with the camera pulled back that is around a thousand quads, and on a phone
+ * that alone eats the frame. Baked, the ground costs exactly one quad.
+ *
  * Replace with a real tileset image and this is the only function that changes.
  */
-function buildTilesetTexture(scene: Phaser.Scene): void {
-  if (scene.textures.exists(TILESET_KEY)) return;
+function bakeTerrain(scene: Phaser.Scene, tiles: Uint8Array): boolean {
+  if (scene.textures.exists(TERRAIN_KEY)) return true;
 
-  const ids = [TILE_GRASS, TILE_DIRT, TILE_ROCK, TILE_WATER];
-  const canvas = scene.textures.createCanvas(TILESET_KEY, TILE_SIZE * ids.length, TILE_SIZE);
+  const canvas = scene.textures.createCanvas(TERRAIN_KEY, MAP_WIDTH, MAP_HEIGHT);
   const ctx = canvas?.context;
-  if (!canvas || !ctx) return;
+  if (!canvas || !ctx) return false;
 
   const rnd = mulberry32(0xc0ffee);
-  ids.forEach((id, index) => {
-    const { base, speckle } = PALETTE[id]!;
-    const ox = index * TILE_SIZE;
-    ctx.fillStyle = `#${base.toString(16).padStart(6, "0")}`;
-    ctx.fillRect(ox, 0, TILE_SIZE, TILE_SIZE);
-    ctx.fillStyle = `#${speckle.toString(16).padStart(6, "0")}`;
-    for (let i = 0; i < 34; i++) {
-      const x = ox + Math.floor(rnd() * TILE_SIZE);
-      const y = Math.floor(rnd() * TILE_SIZE);
-      ctx.fillRect(x, y, 2, 2);
+
+  for (let ty = 0; ty < MAP_TILES_Y; ty++) {
+    for (let tx = 0; tx < MAP_TILES_X; tx++) {
+      const id = tiles[ty * MAP_TILES_X + tx]!;
+      const { base, speckle } = PALETTE[id] ?? PALETTE[TILE_GRASS]!;
+      const ox = tx * TILE_SIZE;
+      const oy = ty * TILE_SIZE;
+
+      ctx.fillStyle = `#${base.toString(16).padStart(6, "0")}`;
+      ctx.fillRect(ox, oy, TILE_SIZE, TILE_SIZE);
+
+      ctx.fillStyle = `#${speckle.toString(16).padStart(6, "0")}`;
+      for (let i = 0; i < 12; i++) {
+        ctx.fillRect(ox + Math.floor(rnd() * TILE_SIZE), oy + Math.floor(rnd() * TILE_SIZE), 2, 2);
+      }
+
+      if (id === TILE_ROCK) {
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.fillRect(ox, oy + TILE_SIZE - 5, TILE_SIZE, 5);
+      }
     }
-    if (id === TILE_ROCK) {
-      ctx.fillStyle = "rgba(0,0,0,0.35)";
-      ctx.fillRect(ox, TILE_SIZE - 5, TILE_SIZE, 5);
-    }
-  });
-
-  canvas.refresh();
-}
-
-/** Builds the static ground layer. Phaser culls off-screen tiles for us. */
-export function createTerrain(scene: Phaser.Scene, tiles: Uint8Array): Phaser.Tilemaps.TilemapLayer | null {
-  buildTilesetTexture(scene);
-
-  const data: number[][] = [];
-  for (let y = 0; y < MAP_TILES_Y; y++) {
-    const row: number[] = new Array(MAP_TILES_X);
-    for (let x = 0; x < MAP_TILES_X; x++) row[x] = tiles[y * MAP_TILES_X + x]!;
-    data.push(row);
   }
 
-  const map = scene.make.tilemap({ data, tileWidth: TILE_SIZE, tileHeight: TILE_SIZE });
-  const tileset = map.addTilesetImage(TILESET_KEY, TILESET_KEY, TILE_SIZE, TILE_SIZE, 0, 0);
-  if (!tileset) return null;
+  canvas.refresh();
+  return true;
+}
 
-  const layer = map.createLayer(0, tileset, 0, 0);
-  layer?.setDepth(-1000);
-  return layer;
+/** Builds the static ground as one baked image. */
+export function createTerrain(scene: Phaser.Scene, tiles: Uint8Array): Phaser.GameObjects.Image | null {
+  if (!bakeTerrain(scene, tiles)) return null;
+
+  return scene.add.image(0, 0, TERRAIN_KEY).setOrigin(0, 0).setDepth(-1000);
 }

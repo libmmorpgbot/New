@@ -15,12 +15,13 @@ import {
   type ClassId,
   type HitEvent,
 } from "@tg-mmo/shared";
+import { MONSTERS } from "@tg-mmo/shared";
 import { ensureHeroLoaded, ensureMonsterLoaded, isHeroReady, isMonsterReady } from "../assets";
 import { HeroSprite } from "../entities/HeroSprite";
 import { MonsterSprite } from "../entities/MonsterSprite";
 import { createTerrain } from "../world/terrain";
 import { getRoom, sendAttack, sendInput, sendSkill, setHandlers } from "../../net/net";
-import type { PlayerView } from "../../net/net";
+import type { MonsterView, PlayerView } from "../../net/net";
 import { inputState } from "../../input/inputState";
 import { useGame } from "../../store";
 import { haptic } from "../../telegram";
@@ -28,6 +29,23 @@ import { haptic } from "../../telegram";
 const INPUT_STEP_MS = 1000 / INPUT_SEND_HZ;
 const HUD_INTERVAL_MS = 100;
 const SKILL_CAST_LOCK_MS = 260;
+/** How close a tap has to land, in *screen* pixels, to grab a monster. */
+const PICK_RADIUS_PX = 42;
+/** Taps land on the body, which sits above the entity's feet position. */
+const PICK_BODY_OFFSET = 14;
+/** Margin around the camera view so sprites appear before they slide in. */
+const CULL_MARGIN = 120;
+/** How many damage labels to keep alive for reuse. */
+const FLOATER_POOL = 24;
+
+function inView(view: Phaser.Geom.Rectangle, x: number, y: number): boolean {
+  return (
+    x >= view.x - CULL_MARGIN &&
+    x <= view.right + CULL_MARGIN &&
+    y >= view.y - CULL_MARGIN &&
+    y <= view.bottom + CULL_MARGIN
+  );
+}
 
 interface PendingInput {
   seq: number;
@@ -59,6 +77,9 @@ export class WorldScene extends Phaser.Scene {
   private attackReadyAt = 0;
   private skillReadyAt = [0, 0, 0, 0];
   private spawned = false;
+  private targetId: string | null = null;
+  private readonly floaters: Phaser.GameObjects.Text[] = [];
+  private uiScale = 1;
 
   constructor() {
     super("world");
@@ -88,14 +109,79 @@ export class WorldScene extends Phaser.Scene {
     });
 
     this.setupKeyboard();
+    this.setupTargeting();
+  }
+
+  /** Tap a monster to lock onto it; tap bare ground to let go. */
+  private setupTargeting(): void {
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, (pointer: Phaser.Input.Pointer) => {
+      const world = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+      const room = getRoom();
+      if (!room?.state?.monsters) return;
+
+      // Tolerance is fixed on screen: pulling the camera back must not make
+      // monsters harder to hit.
+      let best: string | null = null;
+      let bestDist = PICK_RADIUS_PX / this.cameras.main.zoom;
+
+      room.state.monsters.forEach((monster: MonsterView, id: string) => {
+        if (monster.hp <= 0) return;
+        const d = Math.hypot(monster.x - world.x, monster.y - PICK_BODY_OFFSET - world.y);
+        if (d < bestDist) {
+          bestDist = d;
+          best = id;
+        }
+      });
+
+      this.setTarget(best);
+    });
+  }
+
+  private setTarget(id: string | null): void {
+    if (this.targetId === id) return;
+    if (this.targetId) this.monsters.get(this.targetId)?.setSelected(false);
+    this.targetId = id;
+    if (id) {
+      this.monsters.get(id)?.setSelected(true);
+      haptic("light");
+    }
+    this.pushTarget();
+  }
+
+  /** Mirrors the locked monster into the store so the target frame can render it. */
+  private pushTarget(): void {
+    const room = getRoom();
+    const monster = this.targetId
+      ? (room?.state?.monsters?.get(this.targetId) as MonsterView | undefined)
+      : undefined;
+
+    if (!monster || monster.hp <= 0) {
+      if (this.targetId) this.setTarget(null);
+      else useGame.getState().setTarget(null);
+      return;
+    }
+
+    const def = MONSTERS[monster.kind];
+    useGame.getState().setTarget({
+      id: this.targetId!,
+      kind: monster.kind,
+      name: def?.name ?? monster.kind,
+      level: monster.level,
+      hp: monster.hp,
+      maxHp: monster.maxHp,
+    });
   }
 
   private applyZoom(): void {
     // Aim for roughly this much of the world across the short edge of the screen.
-    const VISIBLE_WORLD_PX = 230;
+    const VISIBLE_WORLD_PX = 690;
     const shortEdge = Math.min(this.scale.gameSize.width, this.scale.gameSize.height);
-    const zoom = Phaser.Math.Clamp(shortEdge / VISIBLE_WORLD_PX, 1.25, 3.5);
-    this.cameras.main.setZoom(Math.round(zoom * 4) / 4);
+    // Not snapped to quarters any more: a fractional zoom is smoother than a
+    // rounded one once the camera itself stops rounding its scroll.
+    this.cameras.main.setZoom(Phaser.Math.Clamp(shortEdge / VISIBLE_WORLD_PX, 0.4, 1.6));
+    this.uiScale = 1 / this.cameras.main.zoom;
+    for (const sprite of this.heroes.values()) sprite.setUiScale(this.uiScale);
+    for (const sprite of this.monsters.values()) sprite.setUiScale(this.uiScale);
   }
 
   private setupKeyboard(): void {
@@ -151,8 +237,10 @@ export class WorldScene extends Phaser.Scene {
 
     if (self) this.reconcile(self);
 
-    // Exponential smoothing keeps the drawn position stable across variable frame times.
-    const t = 1 - Math.exp(-delta / 55);
+    // Exponential smoothing keeps the drawn position stable across variable frame
+    // times. The constant has to stay well under the input step, or the smoothing
+    // lags the simulation and the character visibly surges.
+    const t = 1 - Math.exp(-delta / 38);
     this.renderX = Phaser.Math.Linear(this.renderX, this.simX, t);
     this.renderY = Phaser.Math.Linear(this.renderY, this.simY, t);
 
@@ -163,6 +251,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.hudAcc >= HUD_INTERVAL_MS) {
       this.hudAcc = 0;
       this.pushHud(self);
+      this.pushTarget();
     }
   }
 
@@ -175,7 +264,7 @@ export class WorldScene extends Phaser.Scene {
         const stats = statsForLevel(this.selfClass, self?.level ?? 1);
         this.attackReadyAt = now + stats.attackCooldownMs;
         this.busyUntil = now + stats.attackWindupMs;
-        sendAttack();
+        sendAttack(this.targetId ?? undefined);
         haptic("light");
       }
       if (inputState.skillQueued >= 0) {
@@ -257,6 +346,7 @@ export class WorldScene extends Phaser.Scene {
   private syncPlayers(room: NonNullable<ReturnType<typeof getRoom>>, delta: number): void {
     const seen = new Set<string>();
     const t = 1 - Math.exp(-delta / 90);
+    const view = this.cameras.main.worldView;
 
     room.state.players.forEach((player: PlayerView, id: string) => {
       seen.add(id);
@@ -268,9 +358,12 @@ export class WorldScene extends Phaser.Scene {
           return;
         }
         sprite = new HeroSprite(this, player.cls, player.name, id === this.selfId);
+        sprite.setUiScale(this.uiScale);
         this.heroes.set(id, sprite);
         sprite.setPosition(player.x, player.y);
-        if (id === this.selfId) this.cameras.main.startFollow(sprite, true, 0.14, 0.14);
+        // `false`: rounding the camera scroll to whole pixels is what makes slow
+        // movement look like it is stepping rather than gliding.
+        if (id === this.selfId) this.cameras.main.startFollow(sprite, false, 0.16, 0.16);
       }
 
       if (id === this.selfId) {
@@ -287,9 +380,13 @@ export class WorldScene extends Phaser.Scene {
         sprite.play8(player.dir, player.action);
       }
 
-      sprite.setVitals(player.hp, player.maxHp, player.shield);
-      sprite.setAlpha(player.dead ? 0.55 : 1);
-      sprite.setDepth(sprite.y);
+      const visible = id === this.selfId || inView(view, player.x, player.y);
+      sprite.setVisible(visible);
+      if (visible) {
+        sprite.setVitals(player.hp, player.maxHp, player.shield);
+        sprite.setAlpha(player.dead ? 0.55 : 1);
+        sprite.setDepth(sprite.y);
+      }
     });
 
     for (const [id, sprite] of this.heroes) {
@@ -303,19 +400,32 @@ export class WorldScene extends Phaser.Scene {
   private syncMonsters(room: NonNullable<ReturnType<typeof getRoom>>, delta: number): void {
     const seen = new Set<string>();
     const t = 1 - Math.exp(-delta / 90);
+    const view = this.cameras.main.worldView;
 
     room.state.monsters.forEach((monster, id: string) => {
       seen.add(id);
       let sprite = this.monsters.get(id);
+      const visible = inView(view, monster.x, monster.y);
 
       if (!sprite) {
+        // Nothing is built for a monster you cannot see; walking towards it creates it.
+        if (!visible) return;
         if (!isMonsterReady(monster.kind)) {
           void ensureMonsterLoaded(this, monster.kind);
           return;
         }
         sprite = new MonsterSprite(this, monster.kind);
+        sprite.setUiScale(this.uiScale);
         this.monsters.set(id, sprite);
         sprite.setPosition(monster.x, monster.y);
+        if (id === this.targetId) sprite.setSelected(true);
+      }
+
+      sprite.setVisible(visible);
+      if (!visible) {
+        // Off-screen: keep the position current, skip animation and redraws.
+        sprite.setPosition(monster.x, monster.y);
+        return;
       }
 
       sprite.setPosition(
@@ -331,6 +441,7 @@ export class WorldScene extends Phaser.Scene {
       if (!seen.has(id)) {
         sprite.destroy();
         this.monsters.delete(id);
+        if (id === this.targetId) this.setTarget(null);
       }
     }
   }
@@ -348,17 +459,23 @@ export class WorldScene extends Phaser.Scene {
     this.floatText(event.x, event.y, `${event.crit ? "!" : ""}${event.amount}`, colour, mine || onMe);
   }
 
+  /**
+   * Damage numbers are recycled rather than created.
+   *
+   * Every Phaser Text owns a canvas that gets uploaded to the GPU when its
+   * contents change; spawning one per hit means a texture upload on every swing,
+   * which is exactly the kind of hitch that reads as "the game is not smooth".
+   */
   private floatText(x: number, y: number, text: string, colour: string, emphasise = true): void {
-    const label = this.add
-      .text(x, y - 40, text, {
-        fontSize: emphasise ? "15px" : "12px",
-        fontFamily: "ui-sans-serif, system-ui, sans-serif",
-        color: colour,
-        stroke: "#000000",
-        strokeThickness: 4,
-      })
-      .setOrigin(0.5)
-      .setDepth(100000);
+    const label = this.floaters.pop() ?? this.makeFloater();
+
+    label
+      .setText(text)
+      .setPosition(x, y - 40)
+      .setColor(colour)
+      .setFontSize(emphasise ? 15 : 12)
+      .setAlpha(1)
+      .setVisible(true);
 
     this.tweens.add({
       targets: label,
@@ -366,8 +483,26 @@ export class WorldScene extends Phaser.Scene {
       alpha: 0,
       duration: 800,
       ease: "Quad.easeOut",
-      onComplete: () => label.destroy(),
+      onComplete: () => {
+        label.setVisible(false);
+        if (this.floaters.length < FLOATER_POOL) this.floaters.push(label);
+        else label.destroy();
+      },
     });
+  }
+
+  private makeFloater(): Phaser.GameObjects.Text {
+    return this.add
+      .text(0, 0, "", {
+        fontSize: "15px",
+        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(100000)
+      .setVisible(false);
   }
 
   private pushHud(self: PlayerView | undefined): void {

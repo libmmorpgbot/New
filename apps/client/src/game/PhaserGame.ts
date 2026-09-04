@@ -11,7 +11,9 @@ export function startPhaser(): Phaser.Game {
     parent: "game-root",
     backgroundColor: "#0b0f16",
     pixelArt: true,
-    roundPixels: true,
+    // Sub-pixel placement: snapping sprites to whole pixels under a fractional
+    // camera zoom is what reads as stutter during slow movement.
+    roundPixels: false,
     antialias: false,
     scale: {
       mode: Phaser.Scale.RESIZE,

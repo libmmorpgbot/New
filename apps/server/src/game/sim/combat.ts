@@ -2,6 +2,7 @@ import {
   CLASSES,
   MONSTER_RESPAWN_MS,
   RESPAWN_DELAY_MS,
+  dir8Index,
   distanceSq,
   getSkill,
   goldReward,
@@ -122,14 +123,39 @@ export function damagePlayer(
   }
 }
 
-/** Basic attack: a cone in front of the player, hitting every monster inside it. */
-export function performBasicAttack(ctx: SimContext, player: PlayerRuntime): boolean {
+/**
+ * Basic attack. With a target selected the swing goes to that monster as long as
+ * it is in range; otherwise it sweeps a cone in front of the player. The target
+ * only ever narrows what gets hit — range and cooldown are still the server's call.
+ */
+export function performBasicAttack(
+  ctx: SimContext,
+  player: PlayerRuntime,
+  targetId?: string,
+): boolean {
   if (player.state.dead || ctx.now < player.attackReadyAt || ctx.now < player.busyUntil) return false;
 
   const stats = statsForLevel(player.state.cls as ClassId, player.state.level);
   player.attackReadyAt = ctx.now + stats.attackCooldownMs;
   player.busyUntil = ctx.now + stats.attackWindupMs;
   player.state.action = "attack";
+
+  const target = targetId ? ctx.monsters.get(targetId) : undefined;
+  if (target && target.state.hp > 0) {
+    const reach = stats.attackRange + target.def.radius;
+    const dx = target.state.x - player.state.x;
+    const dy = target.state.y - player.state.y;
+    if (dx * dx + dy * dy <= reach * reach) {
+      // Face the target so the animation and any follow-up cone line up.
+      const len = Math.hypot(dx, dy) || 1;
+      player.faceX = dx / len;
+      player.faceY = dy / len;
+      player.state.dir = dir8Index(player.faceX, player.faceY);
+
+      damageMonster(ctx, target, player, stats.attackDamage);
+      return true;
+    }
+  }
 
   hitConeMonsters(ctx, player, stats.attackRange, stats.attackArc, stats.attackDamage);
   return true;

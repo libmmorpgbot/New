@@ -88,8 +88,8 @@ export function sendInput(seq: number, dx: number, dy: number, dt: number): void
   room?.send(MSG.input, { seq, dx, dy, dt });
 }
 
-export function sendAttack(): void {
-  room?.send(MSG.attack, {});
+export function sendAttack(targetId?: string): void {
+  room?.send(MSG.attack, targetId ? { targetId } : {});
 }
 
 export function sendSkill(slot: number): void {

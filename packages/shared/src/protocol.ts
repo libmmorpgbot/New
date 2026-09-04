@@ -30,6 +30,12 @@ export const InputMessage = z.object({
 });
 export type InputMessage = z.infer<typeof InputMessage>;
 
+export const AttackMessage = z.object({
+  /** Monster the player has selected, if any. The server still checks range. */
+  targetId: z.string().max(24).optional(),
+});
+export type AttackMessage = z.infer<typeof AttackMessage>;
+
 export const SkillMessage = z.object({
   slot: z.number().int().min(0).max(3),
 });
