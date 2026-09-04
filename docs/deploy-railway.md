@@ -107,6 +107,7 @@ DATABASE_URL="postgres://...@...proxy.rlwy.net:PORT/railway" pnpm db:push
 | Симптом | Причина |
 | --- | --- |
 | Сборка падает на `pnpm install` | задан Root Directory — убери, нужен корень репозитория |
+| `pnpm install` падает с `exit code 128` | в лок-файле зависимость из git (её клонирование требует ключей, которых в билдере нет) — проверь `pnpm check:lockfile` |
 | Сервисов больше одного | Railway завёл по сервису на пакет — удали все, кроме `@tg-mmo/server` |
 | `client=off` в логе | не выполнен `pnpm build` в Build Command |
 | «Не удалось авторизоваться (401)» | неверный `BOT_TOKEN` |

@@ -19,7 +19,6 @@
     "@colyseus/ws-transport": "^0.16.0",
     "@tg-mmo/db": "workspace:*",
     "@tg-mmo/shared": "workspace:*",
-    "colyseus": "0.16.5",
     "dotenv": "^17.4.2",
     "express": "^5.1.0",
     "grammy": "^1.46.0",

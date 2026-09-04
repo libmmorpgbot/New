@@ -16,7 +16,8 @@
     "assets": "node tools/build-assets.mjs",
     "db:generate": "pnpm --filter @tg-mmo/db generate",
     "db:push": "pnpm --filter @tg-mmo/db push",
-    "check": "pnpm --filter @tg-mmo/server check:initdata && pnpm --filter @tg-mmo/server check:world"
+    "check": "node tools/check-lockfile.mjs && pnpm --filter @tg-mmo/server check:initdata && pnpm --filter @tg-mmo/server check:world",
+    "check:lockfile": "node tools/check-lockfile.mjs"
   },
   "devDependencies": {
     "typescript": "5.9.3"

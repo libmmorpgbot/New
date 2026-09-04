@@ -141,7 +141,7 @@ tools/
 
 ```bash
 pnpm typecheck                              # все пакеты
-pnpm check                                  # подпись Telegram + раскладка мира
+pnpm check                                  # лок-файл + подпись Telegram + раскладка мира
 pnpm --filter @tg-mmo/server smoke          # боты подключаются и бегают
 BOTS=50 RUN_MS=30000 pnpm --filter @tg-mmo/server smoke   # нагрузочный прогон
 ```
