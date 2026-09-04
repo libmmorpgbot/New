@@ -5,6 +5,8 @@ import { getManifest, heroAnimKey, heroTextureKey, measureAnchor } from "../asse
 /** One player on screen: animated body, nameplate and a health pip. */
 export class HeroSprite extends Phaser.GameObjects.Container {
   readonly sprite: Phaser.GameObjects.Sprite;
+  /** Ground ring, drawn under the body so the character reads as "standing on" the map. */
+  private readonly ring: Phaser.GameObjects.Graphics;
   private readonly nameplate: Phaser.GameObjects.Text;
   private readonly bar: Phaser.GameObjects.Graphics;
   private readonly cls: string;
@@ -22,21 +24,24 @@ export class HeroSprite extends Phaser.GameObjects.Container {
     const anchor = measureAnchor(scene, firstKey, frameW, frameH);
     this.headOffset = anchor.headOffset;
 
+    this.ring = scene.add.graphics();
+    this.drawRing(isSelf);
+
     this.sprite = scene.add.sprite(0, 0, firstKey, 0);
     this.sprite.setOrigin(0.5, anchor.originY);
 
     this.bar = scene.add.graphics();
     this.nameplate = scene.add
-      .text(0, this.headOffset - 26, name, {
+      .text(0, this.headOffset - 28, name, {
         fontSize: "12px",
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
-        color: isSelf ? "#8ee6a3" : "#dbe4f2",
+        color: isSelf ? "#ffe9a8" : "#dbe4f2",
         stroke: "#000000",
-        strokeThickness: 3,
+        strokeThickness: 4,
       })
       .setOrigin(0.5, 0);
 
-    this.add([this.sprite, this.bar, this.nameplate]);
+    this.add([this.ring, this.sprite, this.bar, this.nameplate]);
     scene.add.existing(this);
   }
 
@@ -50,22 +55,37 @@ export class HeroSprite extends Phaser.GameObjects.Container {
     this.sprite.play(key, true);
   }
 
+  /** A gold ring marks you, a cool one marks everyone else. */
+  private drawRing(isSelf: boolean): void {
+    const color = isSelf ? 0xe9b949 : 0x5f8fc4;
+    this.ring.clear();
+    this.ring.fillStyle(color, 0.12);
+    this.ring.fillEllipse(0, -2, 40, 16);
+    this.ring.lineStyle(1.5, color, isSelf ? 0.85 : 0.5);
+    this.ring.strokeEllipse(0, -2, 40, 16);
+    this.ring.lineStyle(1, color, isSelf ? 0.35 : 0.2);
+    this.ring.strokeEllipse(0, -2, 48, 20);
+  }
+
   setVitals(hp: number, maxHp: number, shield: number): void {
     this.bar.clear();
     if (maxHp <= 0) return;
 
-    const width = 34;
-    const y = this.headOffset - 8;
+    const width = 40;
+    const y = this.headOffset - 12;
     const ratio = Phaser.Math.Clamp(hp / maxHp, 0, 1);
 
-    this.bar.fillStyle(0x000000, 0.55);
-    this.bar.fillRect(-width / 2 - 1, y - 1, width + 2, 5);
-    this.bar.fillStyle(ratio > 0.35 ? 0x5ac46a : 0xd05050, 1);
-    this.bar.fillRect(-width / 2, y, width * ratio, 3);
+    // Frame first, then fill — the dark border is what keeps it readable over grass.
+    this.bar.fillStyle(0x05090f, 0.85);
+    this.bar.fillRect(-width / 2 - 1, y - 1, width + 2, 6);
+    this.bar.fillStyle(ratio > 0.35 ? 0x3ecf6b : 0xd05050, 1);
+    this.bar.fillRect(-width / 2, y, width * ratio, 4);
+    this.bar.fillStyle(0xffffff, 0.35);
+    this.bar.fillRect(-width / 2, y, width * ratio, 1);
 
     if (shield > 0) {
-      this.bar.fillStyle(0x6fa8ff, 0.9);
-      this.bar.fillRect(-width / 2, y - 4, width * Phaser.Math.Clamp(shield / maxHp, 0, 1), 2);
+      this.bar.fillStyle(0x6fa8ff, 0.95);
+      this.bar.fillRect(-width / 2, y - 3, width * Phaser.Math.Clamp(shield / maxHp, 0, 1), 2);
     }
   }
 

@@ -164,6 +164,7 @@ export class GameRoom extends Room<GameState> {
 
       runtime.state.level = Math.max(1, saved.level);
       runtime.state.xp = Math.max(0, saved.xp);
+      runtime.state.gold = Math.max(0, saved.gold);
       applyLevelStats(runtime);
       runtime.state.hp = runtime.state.maxHp;
       runtime.state.mp = runtime.state.maxMp;
@@ -189,6 +190,7 @@ export class GameRoom extends Room<GameState> {
       await storeProgress(player.userId, player.state.cls, {
         level: player.state.level,
         xp: player.state.xp,
+        gold: player.state.gold,
         x: player.state.x,
         y: player.state.y,
       });

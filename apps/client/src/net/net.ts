@@ -20,6 +20,7 @@ export interface PlayerView {
   level: number;
   xp: number;
   xpToNext: number;
+  gold: number;
   lastSeq: number;
   dead: boolean;
 }

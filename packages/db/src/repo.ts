@@ -56,6 +56,7 @@ export async function loadOrCreateCharacter(
 export interface CharacterProgress {
   level: number;
   xp: number;
+  gold: number;
   x: number;
   y: number;
 }

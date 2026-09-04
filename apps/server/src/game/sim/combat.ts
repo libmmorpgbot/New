@@ -4,6 +4,7 @@ import {
   RESPAWN_DELAY_MS,
   distanceSq,
   getSkill,
+  goldReward,
   moveWithCollision,
   rollDamage,
   statsForLevel,
@@ -53,6 +54,7 @@ function killMonster(ctx: SimContext, monster: MonsterRuntime, killer: PlayerRun
   monster.targetSessionId = null;
 
   grantXp(ctx, killer, xpReward(monster.def.xp, monster.def.level, killer.state.level));
+  killer.state.gold = Math.min(4294967295, killer.state.gold + goldReward(monster.def.xp, monster.def.level));
 }
 
 export function grantXp(ctx: SimContext, player: PlayerRuntime, xp: number): void {

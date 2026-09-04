@@ -6,13 +6,20 @@ export default function DeathOverlay() {
   if (!dead) return null;
 
   return (
-    <div className="absolute inset-0 grid place-items-center bg-black/55 backdrop-blur-[1px]">
+    <div className="absolute inset-0 grid place-items-center bg-[rgba(30,4,8,.55)] backdrop-blur-[2px]">
       <div className="text-center">
-        <p className="mb-1 text-2xl font-semibold tracking-tight text-rose-300">Ты пал</p>
-        <p className="mb-5 text-xs text-slate-400">Возрождение на площади через несколько секунд.</p>
+        <p className="mb-1 text-[28px] font-bold tracking-tight text-[#ff9a9a] drop-shadow-[0_0_12px_rgba(255,90,90,.6)]">
+          Ты пал
+        </p>
+        <p className="mb-5 text-[11px] text-[color:var(--muted)]">
+          Возрождение на площади через несколько секунд.
+        </p>
         <button
-          className="interactive rounded-lg bg-slate-800 px-5 py-2 text-sm text-slate-100 active:bg-slate-700"
-          onClick={() => sendRespawn()}
+          className="interactive panel bevel px-6 py-2.5 text-[13px] font-semibold"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            sendRespawn();
+          }}
         >
           Возродиться сейчас
         </button>

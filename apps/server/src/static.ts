@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { RequestHandler } from "express";
 import sirv from "sirv";
+import { env } from "./env";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const CLIENT_DIST = join(here, "../../client/dist");
@@ -20,7 +21,9 @@ export const clientBuilt = () => existsSync(join(CLIENT_DIST, "index.html"));
  */
 export function clientStatic(): RequestHandler {
   const serve = sirv(CLIENT_DIST, {
-    single: true, // unknown paths fall back to index.html
+    // `dev` re-reads the directory per request; without it a rebuild while the
+    // server is up keeps 404-ing the new bundles.
+    dev: env.NODE_ENV !== "production",
     etag: true,
     gzip: true,
     brotli: true,
@@ -38,5 +41,19 @@ export function clientStatic(): RequestHandler {
     },
   });
 
-  return (req, res, next) => serve(req, res, next);
+  return (req, res, next) => {
+    serve(req, res, () => {
+      const path = (req.path || "/").split("?")[0] ?? "/";
+      const looksLikeFile = /\.[a-z0-9]+$/i.test(path.split("/").pop() ?? "");
+
+      // Only navigation falls back to the app shell. Handing index.html to a
+      // request for a missing .js or .css just turns a 404 into a MIME error.
+      if (looksLikeFile) {
+        next();
+        return;
+      }
+      res.setHeader("cache-control", "no-cache");
+      res.sendFile(join(CLIENT_DIST, "index.html"));
+    });
+  };
 }

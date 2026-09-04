@@ -33,7 +33,7 @@ export async function loadProgress(
 ): Promise<CharacterProgress | null> {
   if (!db) return null;
   const row = await loadOrCreateCharacter(db, userId, cls);
-  return { level: row.level, xp: row.xp, x: row.x, y: row.y };
+  return { level: row.level, xp: row.xp, gold: row.gold, x: row.x, y: row.y };
 }
 
 export async function storeProgress(

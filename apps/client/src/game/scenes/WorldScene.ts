@@ -385,6 +385,7 @@ export class WorldScene extends Phaser.Scene {
       shield: self.shield,
       xp: self.xp,
       xpToNext: self.xpToNext,
+      gold: self.gold,
       dead: self.dead,
       respawnIn: self.dead ? Math.max(0, RESPAWN_DELAY_MS) : 0,
     });

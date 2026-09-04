@@ -40,3 +40,12 @@ export function xpReward(monsterXp: number, monsterLevel: number, playerLevel: n
   const factor = Math.max(0.05, 1 - (gap - 2) * 0.15);
   return Math.max(1, Math.round(monsterXp * factor));
 }
+
+/**
+ * Coin dropped by a kill. Tied to the monster's own worth rather than the
+ * killer's level, so farming trivial mobs stops paying quickly.
+ */
+export function goldReward(monsterXp: number, monsterLevel: number, rng: () => number = Math.random): number {
+  const base = 2 + monsterXp * 0.45 + monsterLevel * 1.5;
+  return Math.max(1, Math.round(base * (0.8 + rng() * 0.4)));
+}

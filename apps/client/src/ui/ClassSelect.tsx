@@ -1,58 +1,44 @@
-import { CLASSES, CLASS_IDS, type ClassId } from "@tg-mmo/shared";
-
-const PORTRAIT: Record<ClassId, string> = {
-  mage: "assets/sprites/heroes/mage/down-idle.png",
-  ranger: "assets/sprites/heroes/ranger/down-idle.png",
-  deathknight: "assets/sprites/heroes/deathknight/down-idle.png",
-};
-
-/**
- * The portrait is the first frame of the idle sheet, cropped with CSS —
- * cheaper than shipping separate portrait art.
- */
-function Portrait({ cls }: { cls: ClassId }) {
-  return (
-    <div
-      className="size-24 shrink-0 rounded-lg bg-slate-900/70"
-      style={{
-        backgroundImage: `url(${PORTRAIT[cls]})`,
-        backgroundSize: "1500% 100%",
-        backgroundPosition: "0 0",
-        imageRendering: "pixelated",
-        transform: "scale(1.15)",
-      }}
-    />
-  );
-}
+import { CLASSES, CLASS_IDS, statsForLevel, type ClassId } from "@tg-mmo/shared";
+import Portrait from "./Portrait";
 
 export default function ClassSelect({ onPick }: { onPick: (cls: ClassId) => void }) {
   return (
-    <div className="interactive absolute inset-0 overflow-y-auto bg-[#0b0f16] px-5 pb-10 pt-[calc(var(--safe-top)+2rem)]">
-      <h1 className="mb-1 text-center text-2xl font-semibold tracking-tight text-slate-100">
-        Ashen Realms
-      </h1>
-      <p className="mb-7 text-center text-sm text-slate-500">Выбери класс — его можно сменить позже.</p>
+    <div className="interactive absolute inset-0 overflow-y-auto bg-[color:var(--ink)] px-4 pb-10 pt-[calc(var(--safe-top)+2rem)]">
+      <div className="mx-auto max-w-md">
+        <h1 className="text-center text-[26px] font-bold tracking-tight glow-text">Пустоши</h1>
+        <p className="mb-6 text-center text-[12px] text-[color:var(--muted)]">
+          Выбери класс. Прогресс каждого хранится отдельно.
+        </p>
 
-      <div className="mx-auto flex max-w-md flex-col gap-3">
-        {CLASS_IDS.map((id) => {
-          const cls = CLASSES[id];
-          return (
-            <button
-              key={id}
-              onClick={() => onPick(id)}
-              className="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-left active:border-emerald-600/60 active:bg-slate-800/80"
-            >
-              <Portrait cls={id} />
-              <span className="min-w-0">
-                <span className="block text-base font-medium text-slate-100">{cls.name}</span>
-                <span className="mt-0.5 block text-xs leading-snug text-slate-400">{cls.blurb}</span>
-                <span className="mt-2 block text-[11px] text-slate-500">
-                  HP {cls.stats.maxHp} · MP {cls.stats.maxMp} · урон {cls.stats.attackDamage}
+        <div className="flex flex-col gap-2.5">
+          {CLASS_IDS.map((id) => {
+            const hero = CLASSES[id];
+            const stats = statsForLevel(id, 1);
+            return (
+              <button
+                key={id}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  onPick(id);
+                }}
+                className="panel bevel flex items-center gap-3.5 p-3 text-left active:brightness-125"
+              >
+                <Portrait cls={id} size={68} />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold glow-text">{hero.name}</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-[color:var(--muted)]">
+                    {hero.blurb}
+                  </span>
+                  <span className="mt-2 flex gap-3 text-[10px] font-semibold">
+                    <span className="text-[#6ee79a]">HP {stats.maxHp}</span>
+                    <span className="text-[#6ec6f5]">MP {stats.maxMp}</span>
+                    <span className="gold-text">Урон {stats.attackDamage}</span>
+                  </span>
                 </span>
-              </span>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

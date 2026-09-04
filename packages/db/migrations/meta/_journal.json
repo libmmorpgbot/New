@@ -8,6 +8,13 @@
       "when": 1788437516463,
       "tag": "0000_flashy_winter_soldier",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788517577299,
+      "tag": "0001_slimy_hulk",
+      "breakpoints": true
     }
   ]
 }

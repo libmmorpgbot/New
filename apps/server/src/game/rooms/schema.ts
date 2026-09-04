@@ -21,6 +21,7 @@ export class PlayerState extends Schema {
   @type("uint16") level = 1;
   @type("uint32") xp = 0;
   @type("uint32") xpToNext = 0;
+  @type("uint32") gold = 0;
 
   /** Last input sequence the server has applied — the client reconciles against this. */
   @type("uint32") lastSeq = 0;

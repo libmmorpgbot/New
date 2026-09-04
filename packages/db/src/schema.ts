@@ -36,6 +36,7 @@ export const characters = pgTable(
     class: text("class").notNull(),
     level: integer("level").notNull().default(1),
     xp: integer("xp").notNull().default(0),
+    gold: integer("gold").notNull().default(0),
     x: real("x").notNull().default(0),
     y: real("y").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

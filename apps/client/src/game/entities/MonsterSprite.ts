@@ -32,9 +32,9 @@ export class MonsterSprite extends Phaser.GameObjects.Container {
       .text(0, this.headOffset - 22, def ? `${def.name} ${def.level}` : kind, {
         fontSize: "10px",
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
-        color: "#e6b9b9",
+        color: "#f0b8b0",
         stroke: "#000000",
-        strokeThickness: 3,
+        strokeThickness: 4,
       })
       .setOrigin(0.5, 0)
       .setVisible(false);
@@ -61,10 +61,12 @@ export class MonsterSprite extends Phaser.GameObjects.Container {
     const width = 30;
     const y = this.headOffset - 8;
     const ratio = Phaser.Math.Clamp(hp / maxHp, 0, 1);
-    this.bar.fillStyle(0x000000, 0.55);
-    this.bar.fillRect(-width / 2 - 1, y - 1, width + 2, 5);
-    this.bar.fillStyle(0xcf5a5a, 1);
-    this.bar.fillRect(-width / 2, y, width * ratio, 3);
+    this.bar.fillStyle(0x05090f, 0.85);
+    this.bar.fillRect(-width / 2 - 1, y - 1, width + 2, 6);
+    this.bar.fillStyle(0xd8483f, 1);
+    this.bar.fillRect(-width / 2, y, width * ratio, 4);
+    this.bar.fillStyle(0xffffff, 0.3);
+    this.bar.fillRect(-width / 2, y, width * ratio, 1);
   }
 
   flash(): void {

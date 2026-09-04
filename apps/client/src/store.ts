@@ -13,9 +13,13 @@ export interface HudState {
   shield: number;
   xp: number;
   xpToNext: number;
+  gold: number;
   dead: boolean;
   respawnIn: number;
 }
+
+/** Which full-screen panel is open over the game, if any. */
+export type PanelId = "character" | "map" | "quests" | "clans" | "profile" | "menu";
 
 interface GameStore {
   phase: Phase;
@@ -25,6 +29,9 @@ interface GameStore {
   /** Remaining cooldown per skill slot, in milliseconds. */
   cooldowns: number[];
   chat: ChatEvent[];
+  unreadChat: number;
+  chatOpen: boolean;
+  panel: PanelId | null;
   ping: number;
   setPhase: (phase: Phase) => void;
   setError: (error: string) => void;
@@ -32,6 +39,8 @@ interface GameStore {
   setHud: (hud: Partial<HudState>) => void;
   setCooldowns: (cooldowns: number[]) => void;
   pushChat: (event: ChatEvent) => void;
+  setChatOpen: (open: boolean) => void;
+  setPanel: (panel: PanelId | null) => void;
   setPing: (ping: number) => void;
 }
 
@@ -45,6 +54,7 @@ const EMPTY_HUD: HudState = {
   shield: 0,
   xp: 0,
   xpToNext: 0,
+  gold: 0,
   dead: false,
   respawnIn: 0,
 };
@@ -56,12 +66,21 @@ export const useGame = create<GameStore>((set) => ({
   hud: EMPTY_HUD,
   cooldowns: [0, 0, 0, 0],
   chat: [],
+  unreadChat: 0,
+  chatOpen: false,
+  panel: null,
   ping: 0,
   setPhase: (phase) => set({ phase }),
   setError: (error) => set({ error, phase: "error" }),
   setClass: (cls) => set({ cls }),
   setHud: (hud) => set((s) => ({ hud: { ...s.hud, ...hud } })),
   setCooldowns: (cooldowns) => set({ cooldowns }),
-  pushChat: (event) => set((s) => ({ chat: [...s.chat.slice(-49), event] })),
+  pushChat: (event) =>
+    set((s) => ({
+      chat: [...s.chat.slice(-49), event],
+      unreadChat: s.chatOpen ? 0 : Math.min(99, s.unreadChat + 1),
+    })),
+  setChatOpen: (chatOpen) => set(chatOpen ? { chatOpen, unreadChat: 0 } : { chatOpen }),
+  setPanel: (panel) => set({ panel }),
   setPing: (ping) => set({ ping }),
 }));
