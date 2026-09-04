@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { CLASSES, isClassId } from "@tg-mmo/shared";
 
 export interface SheetInfo {
   file: string;
@@ -48,7 +49,34 @@ export const monsterAnimKey = (kind: string, action: string, row: number) =>
   `monAnim:${kind}:${action}:${row}`;
 export const skillIconKey = (icon: string) => `icon:${icon}`;
 
-const HERO_FPS: Record<string, number> = { idle: 10, run: 14, attack: 22, die: 12 };
+/**
+ * Hero clips are timed against the class, not with fixed numbers.
+ *
+ * `run` is paced so one cycle covers roughly a stride on the ground — a fixed
+ * rate makes a fast class skate and a slow one march. `attack` is stretched to
+ * fill the attack cooldown so the whole swing is seen: these sheets put the
+ * actual hit around frame 7 of 15, and a clip cut short looks like the sprite
+ * snapping backwards mid-swing.
+ */
+const STRIDE_PX = 68;
+const IDLE_FPS = 10;
+const DIE_FPS = 12;
+
+function heroFrameRate(cls: string, action: string, frames: number): number {
+  const stats = isClassId(cls) ? CLASSES[cls].stats : undefined;
+  if (!stats) return action === "run" ? 14 : action === "attack" ? 22 : IDLE_FPS;
+
+  switch (action) {
+    case "run":
+      return Phaser.Math.Clamp((frames * stats.moveSpeed) / STRIDE_PX, 12, 40);
+    case "attack":
+      return Phaser.Math.Clamp(frames / (stats.attackCooldownMs / 1000), 12, 45);
+    case "die":
+      return DIE_FPS;
+    default:
+      return IDLE_FPS;
+  }
+}
 const MONSTER_FPS: Record<string, number> = { idle: 8, run: 10, attack: 12, death: 10 };
 
 /** Loads are serialised: Phaser's loader is a single queue per scene. */
@@ -108,7 +136,7 @@ export function ensureHeroLoaded(scene: Phaser.Scene, cls: string): Promise<void
             start: 0,
             end: info.frames - 1,
           }),
-          frameRate: HERO_FPS[action] ?? 12,
+          frameRate: heroFrameRate(cls, action, info.frames),
           repeat: action === "idle" || action === "run" ? -1 : 0,
         });
       }

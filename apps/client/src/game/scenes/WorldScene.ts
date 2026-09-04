@@ -110,6 +110,8 @@ export class WorldScene extends Phaser.Scene {
   /** Facing and motion are predicted locally; waiting for the server shows the wrong pose. */
   private facing = 0;
   private movingLocally = false;
+  /** Separate from `busyUntil`: the pose outlives the movement lock. */
+  private attackPoseUntil = 0;
 
   constructor() {
     super("world");
@@ -440,7 +442,10 @@ export class WorldScene extends Phaser.Scene {
     if (!dead && (pressedAttack || (this.autoAttack && inReach))) {
       if (now >= this.attackReadyAt && now >= this.busyUntil) {
         this.attackReadyAt = now + stats.attackCooldownMs;
+        // Movement unlocks with the server's wind-up, but the pose has to stay
+        // until the swing has played out, or the clip is cut a third of the way in.
         this.busyUntil = now + stats.attackWindupMs;
+        this.attackPoseUntil = now + stats.attackCooldownMs;
         sendAttack(this.targetId ?? undefined);
         if (pressedAttack) haptic("light");
       }
@@ -453,6 +458,7 @@ export class WorldScene extends Phaser.Scene {
       if (skill && now >= (this.skillReadyAt[queuedSkill] ?? 0) && now >= this.busyUntil && affordable) {
         this.skillReadyAt[queuedSkill] = now + skill.cooldownMs;
         this.busyUntil = now + SKILL_CAST_LOCK_MS;
+        this.attackPoseUntil = now + stats.attackCooldownMs;
         sendSkill(queuedSkill);
         haptic("medium");
       }
@@ -523,7 +529,7 @@ export class WorldScene extends Phaser.Scene {
   /** What the player is visibly doing right now, from state the client already knows. */
   private localAction(player: PlayerView): string {
     if (player.dead) return "die";
-    if (this.time.now < this.busyUntil) return "attack";
+    if (this.time.now < this.attackPoseUntil) return "attack";
     return this.movingLocally ? "run" : "idle";
   }
 
