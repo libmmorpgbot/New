@@ -13,7 +13,19 @@ import {
   shouldServeClient,
 } from "./env";
 import { GameRoom } from "./game/rooms/GameRoom";
+import { prepareDatabase } from "./game/persistence";
 import { clientBuilt, clientStatic } from "./static";
+
+if (env.DATABASE_URL) {
+  try {
+    await prepareDatabase();
+    console.log("[server] схема БД актуальна");
+  } catch (err) {
+    // Starting without a usable schema would only fail later, on the first login.
+    console.error("[server] не удалось применить миграции:", err);
+    process.exit(1);
+  }
+}
 
 const app = express();
 

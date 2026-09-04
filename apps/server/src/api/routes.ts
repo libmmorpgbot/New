@@ -73,18 +73,24 @@ export function apiRoutes(): Router {
       return;
     }
 
-    const user = await upsertUser(db, {
-      telegramId: verified.user.id,
-      firstName: name,
-      username: verified.user.username,
-      languageCode: verified.user.language_code,
-    });
+    try {
+      const user = await upsertUser(db, {
+        telegramId: verified.user.id,
+        firstName: name,
+        username: verified.user.username,
+        languageCode: verified.user.language_code,
+      });
 
-    res.json({
-      token: signToken({ sub: String(user.id), name, telegramId: verified.user.id }),
-      name,
-      characters: await listCharacters(db, user.id),
-    });
+      res.json({
+        token: signToken({ sub: String(user.id), name, telegramId: verified.user.id }),
+        name,
+        characters: await listCharacters(db, user.id),
+      });
+    } catch (err) {
+      // Postgres puts the useful part in `cause`; without it the log is just a stack.
+      console.error("[api] запись пользователя не удалась:", describeDbError(err));
+      res.status(500).json({ error: "База данных недоступна. Попробуй позже." });
+    }
   });
 
   router.get("/me", async (req: Request, res: Response) => {
@@ -104,9 +110,21 @@ export function apiRoutes(): Router {
     }
 
     const userId = Number(payload.sub);
-    const characters = db && Number.isFinite(userId) ? await listCharacters(db, userId) : [];
-    res.json({ id: payload.sub, name: payload.name, classes: CLASS_IDS, characters });
+    try {
+      const characters = db && Number.isFinite(userId) ? await listCharacters(db, userId) : [];
+      res.json({ id: payload.sub, name: payload.name, classes: CLASS_IDS, characters });
+    } catch (err) {
+      console.error("[api] чтение персонажей не удалось:", describeDbError(err));
+      res.status(500).json({ error: "База данных недоступна. Попробуй позже." });
+    }
   });
 
   return router;
+}
+
+/** Unwraps the driver error so the log names the real problem, not just "Failed query". */
+function describeDbError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const cause = err.cause instanceof Error ? ` — ${err.cause.message}` : "";
+  return `${err.message}${cause}`;
 }
