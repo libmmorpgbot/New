@@ -49,8 +49,15 @@ export function apiRoutes(): Router {
     let verified;
     try {
       verified = verifyInitData(parsed.data.initData, env.BOT_TOKEN, env.INIT_DATA_TTL);
-    } catch {
-      res.status(401).json({ error: "Не удалось проверить данные Telegram" });
+    } catch (err) {
+      // The reason belongs in the log, not in the response — but without it a
+      // rejected login is impossible to tell apart from a wrong BOT_TOKEN.
+      console.warn("[api] initData отклонён:", err instanceof Error ? err.message : err);
+      res.status(401).json({
+        error:
+          "Не удалось проверить данные Telegram. Убедись, что BOT_TOKEN на сервере " +
+          "принадлежит тому же боту, через которого открыта игра.",
+      });
       return;
     }
 

@@ -29,9 +29,12 @@ export function verifyInitData(
 
   const hash = params.get("hash");
   if (!hash) throw new Error("initData: hash отсутствует");
+
+  // Only `hash` comes out. Everything else stays, including `signature` — the
+  // Ed25519 field added in Bot API 7.10 for third-party validation. Telegram
+  // could only add it because bots hash "every field except hash", so dropping
+  // it here makes the digest differ from Telegram's for any modern client.
   params.delete("hash");
-  // `signature` is Telegram's newer Ed25519 field and is excluded from the HMAC check.
-  params.delete("signature");
 
   const checkString = [...params.entries()]
     .map(([key, value]) => [key, value] as const)
