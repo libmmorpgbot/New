@@ -15,7 +15,7 @@ import {
   type ClassId,
   type HitEvent,
 } from "@tg-mmo/shared";
-import { MONSTERS } from "@tg-mmo/shared";
+import { MONSTERS, dirIndexToVector } from "@tg-mmo/shared";
 import { ensureHeroLoaded, ensureMonsterLoaded, isHeroReady, isMonsterReady } from "../assets";
 import { HeroSprite } from "../entities/HeroSprite";
 import { MonsterSprite } from "../entities/MonsterSprite";
@@ -47,6 +47,11 @@ const STUCK_WINDOW_MS = 400;
 /** How long to steer around an obstacle before aiming at the target again. */
 const DETOUR_MS = 550;
 const DETOUR_ANGLE = Math.PI / 3;
+/**
+ * Keep the current facing while the stick stays within this much of its centre.
+ * A sector is 45 degrees wide, so half of it plus a margin.
+ */
+const FACING_HOLD_COS = Math.cos(((22.5 + 9) * Math.PI) / 180);
 /** Margin around the camera view so sprites appear before they slide in. */
 const CULL_MARGIN = 120;
 /** How many damage labels to keep alive for reuse. */
@@ -102,6 +107,9 @@ export class WorldScene extends Phaser.Scene {
   private approachCheckedAt = 0;
   private detourUntil = 0;
   private detourSign = 1;
+  /** Facing and motion are predicted locally; waiting for the server shows the wrong pose. */
+  private facing = 0;
+  private movingLocally = false;
 
   constructor() {
     super("world");
@@ -225,6 +233,25 @@ export class WorldScene extends Phaser.Scene {
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
     return { x: nx * cos - ny * sin, y: nx * sin + ny * cos };
+  }
+
+  /**
+   * Eight-way facing with a dead band around the current sector.
+   *
+   * A thumb resting on a sector boundary crosses it many times a second, and
+   * every crossing swaps to a different sprite sheet. The extra margin means the
+   * stick has to move decisively into the next sector before the sprite turns.
+   */
+  private steadyFacing(dx: number, dy: number): number {
+    const next = dir8Index(dx, dy);
+    if (next === this.facing) return this.facing;
+
+    const current = dirIndexToVector(this.facing);
+    const alignment = current.x * dx + current.y * dy;
+    if (alignment >= FACING_HOLD_COS) return this.facing;
+
+    this.facing = next;
+    return next;
   }
 
   private targetMonster(): MonsterView | null {
@@ -431,6 +458,11 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
+    // Drives the animation: this is the direction actually being walked, which
+    // during the attack assist is not what the stick says.
+    this.movingLocally = dir.x !== 0 || dir.y !== 0;
+    if (this.movingLocally) this.steadyFacing(dir.x, dir.y);
+
     const input: PendingInput = { seq: this.seq++, dx: dir.x, dy: dir.y, dt };
     sendInput(input.seq, input.dx, input.dy, input.dt);
     this.pending.push(input);
@@ -488,6 +520,13 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** What the player is visibly doing right now, from state the client already knows. */
+  private localAction(player: PlayerView): string {
+    if (player.dead) return "die";
+    if (this.time.now < this.busyUntil) return "attack";
+    return this.movingLocally ? "run" : "idle";
+  }
+
   private syncPlayers(room: NonNullable<ReturnType<typeof getRoom>>, delta: number): void {
     const seen = new Set<string>();
     const t = 1 - Math.exp(-delta / REMOTE_SMOOTH_MS);
@@ -515,10 +554,9 @@ export class WorldScene extends Phaser.Scene {
 
       if (id === this.selfId) {
         sprite.setPosition(this.renderX, this.renderY);
-        // Facing follows the local input immediately; the body action follows the server.
-        const local = normalize(inputState.moveX, inputState.moveY, 0.12);
-        const dir = local.x || local.y ? dir8Index(local.x, local.y) : player.dir;
-        sprite.play8(dir, player.action);
+        // Predicted locally. Taking the pose from the server means a 15 Hz tick
+        // plus latency of standing still while already running.
+        sprite.play8(this.facing, this.localAction(player));
       } else {
         sprite.setPosition(
           Phaser.Math.Linear(sprite.x, player.x, t),

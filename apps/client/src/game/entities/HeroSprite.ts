@@ -13,6 +13,7 @@ export class HeroSprite extends Phaser.GameObjects.Container {
   private readonly overlay: Phaser.GameObjects.Container;
   private readonly cls: string;
   private currentAnim = "";
+  private currentAction = "";
   private headOffset: number;
   /** Skip the Graphics rebuild unless something actually changed. */
   private lastHp = -1;
@@ -53,14 +54,27 @@ export class HeroSprite extends Phaser.GameObjects.Container {
     scene.add.existing(this);
   }
 
-  /** Switches animation only when the (direction, action) pair actually changed. */
+  /**
+   * Switches animation only when the (direction, action) pair actually changed,
+   * and carries the cycle position across.
+   *
+   * Each direction is a separate sheet, so turning means a different animation.
+   * Starting it at frame 0 makes the legs snap back mid-stride on every turn —
+   * which is exactly what "the sprite jumps to a previous frame" looks like.
+   */
   play8(dirIndex: number, action: string): void {
     const anim = action === "die" ? "die" : `${DIRECTIONS_8[dirIndex % 8]}-${action}`;
     const key = heroAnimKey(this.cls, anim);
     if (this.currentAnim === key) return;
     if (!this.scene.anims.exists(key)) return;
+
+    const sameAction = this.currentAction === action;
+    const progress = sameAction ? this.sprite.anims.getProgress() : 0;
+
     this.currentAnim = key;
+    this.currentAction = action;
     this.sprite.play(key, true);
+    if (sameAction) this.sprite.anims.setProgress(progress);
   }
 
   /** A gold ring marks you, a cool one marks everyone else. */

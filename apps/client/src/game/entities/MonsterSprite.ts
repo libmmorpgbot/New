@@ -11,6 +11,7 @@ export class MonsterSprite extends Phaser.GameObjects.Container {
   private readonly overlay: Phaser.GameObjects.Container;
   private readonly kind: string;
   private currentAnim = "";
+  private currentAction = "";
   private headOffset: number;
   /** Centre of the drawn body relative to the feet, and a radius around it. */
   readonly bodyOffsetY: number;
@@ -60,12 +61,19 @@ export class MonsterSprite extends Phaser.GameObjects.Container {
     scene.add.existing(this);
   }
 
+  /** Same as the hero: turning must not restart the walk cycle from frame 0. */
   play4(dirIndex: number, action: string): void {
     const key = monsterAnimKey(this.kind, action, dirIndex % 4);
     if (this.currentAnim === key) return;
     if (!this.scene.anims.exists(key)) return;
+
+    const sameAction = this.currentAction === action;
+    const progress = sameAction ? this.sprite.anims.getProgress() : 0;
+
     this.currentAnim = key;
+    this.currentAction = action;
     this.sprite.play(key, true);
+    if (sameAction) this.sprite.anims.setProgress(progress);
   }
 
   /** Name, level and health are always on — you should know what you are walking into. */
