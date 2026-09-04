@@ -160,11 +160,16 @@ BOTS=50 RUN_MS=30000 pnpm --filter @tg-mmo/server smoke   # нагрузочны
 
 Один сервис плюс Postgres. Подробно — [`docs/deploy-railway.md`](docs/deploy-railway.md).
 
+Команды берутся из `railway.json` в корне:
+
 ```
-Build Command      pnpm install --frozen-lockfile && pnpm build
-Start Command      pnpm start
-Healthcheck Path   /api/health
+Build     pnpm install --frozen-lockfile && pnpm build
+Start     pnpm start
+Health    /api/health
 ```
+
+Railway заводит сервис на каждый пакет воркспейса, так что после импорта
+удали лишний `@tg-mmo/client` — сервер раздаёт клиент сам.
 
 Переменные: `JWT_SECRET`, `BOT_TOKEN`, `WEBAPP_URL`, `DEV_LOGIN=0`,
 `DATABASE_URL`. `PORT` подставляет хостинг. Адреса клиенту задавать не нужно —

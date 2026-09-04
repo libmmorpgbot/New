@@ -17,23 +17,34 @@ Redis из `docker-compose.yml` пока не нужен — в коде он н
 
 ## 1. Создать сервис
 
-`New Project` → `Deploy from GitHub repo` → этот репозиторий, ветка
-`claude/2d-mmorpg-telegram-stack-d4hq3h`.
+`New Project` → `Deploy from GitHub repo` → этот репозиторий, ветка `main`.
 
-Если Railway создал несколько сервисов сам (по одному на каждое приложение) —
-лишние удали, оставь один.
+**Railway почти наверняка создаст два сервиса** — `@tg-mmo/client` и
+`@tg-mmo/server`. Он видит pnpm-воркспейс и заводит сервис на каждый пакет.
+Для этого проекта так не надо: клиент — это статика, которую раздаёт сервер.
 
-В **Settings**:
+- удали сервис `@tg-mmo/client` (`Settings` → внизу `Delete Service`);
+- оставь `@tg-mmo/server`.
+
+Дальше в **Settings** оставшегося сервиса проверь одно поле:
 
 | Поле | Значение |
 | --- | --- |
 | Root Directory | **пусто** (корень репозитория) |
-| Build Command | `pnpm install --frozen-lockfile && pnpm build` |
-| Start Command | `pnpm start` |
-| Healthcheck Path | `/api/health` |
 
-Root Directory обязательно пустой: это pnpm-воркспейс, установка из подпапки
-не соберётся.
+Если Railway проставил туда `apps/server` — сотри. Это pnpm-воркспейс,
+установка из подпапки не соберётся, и клиент собран не будет.
+
+Команды подставятся сами из `railway.json` в корне репозитория:
+
+```
+Build     pnpm install --frozen-lockfile && pnpm build
+Start     pnpm start
+Health    /api/health
+```
+
+Если хочется задать их руками — они же в `Settings`, поля
+`Build Command`, `Start Command` и `Healthcheck Path`.
 
 ## 2. Переменные окружения
 
@@ -96,6 +107,7 @@ DATABASE_URL="postgres://...@...proxy.rlwy.net:PORT/railway" pnpm db:push
 | Симптом | Причина |
 | --- | --- |
 | Сборка падает на `pnpm install` | задан Root Directory — убери, нужен корень репозитория |
+| Сервисов больше одного | Railway завёл по сервису на пакет — удали все, кроме `@tg-mmo/server` |
 | `client=off` в логе | не выполнен `pnpm build` в Build Command |
 | «Не удалось авторизоваться (401)» | неверный `BOT_TOKEN` |
 | «Открой игру через Telegram» | так и задумано при `DEV_LOGIN=0` |
